@@ -1,0 +1,35 @@
+[[bindings]]
+slot = 1
+type = "app"
+name = "Zen Browser"
+# Verifica il vero nome del .desktop sul tuo sistema con:
+#   grep -Ril "^Name=.*Zen" ~/.local/share/applications /usr/share/applications 2>/dev/null
+desktop = "app.zen_browser.zen.desktop"
+# Se valorizzato, questo percorso/nome icona ha priorità sull'Icon= del .desktop.
+# Lascia vuoto per usare automaticamente l'icona del .desktop.
+icon = "/usr/share/icons/cachyos.svg"
+color = "#d95f02"
+
+[[bindings]]
+slot = 2
+type = "app"
+name = "Dolphin"
+desktop = "org.kde.dolphin.desktop"
+icon = "/usr/share/icons/hicolor/scalable/apps/org.kde.dolphin.svg"
+color = "#1f77b4"
+
+[[bindings]]
+slot = 3
+type = "command"
+name = "Jellyfin"
+command = "xdg-open http://100.91.89.44:8096"
+icon = "/usr/share/icons/hicolor/scalable/apps/org.jellyfin.JellyfinDesktop.svg"
+color = "#9467bd"
+
+[[bindings]]
+slot = 4
+type = "command"
+name = "fabsfin"
+command = "xdg-open http://100.87.130.44:8096"
+icon = "/usr/share/icons/hicolor/scalable/apps/org.jellyfin.JellyfinDesktop.svg"
+color = "#9467bd"

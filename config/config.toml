@@ -1,0 +1,14 @@
+[server]
+host = "0.0.0.0"
+port = 8765
+
+[input]
+backend = "ydotool"
+mouse_step = 22
+mouse_repeat_ms = 70
+mouse_accel_after_ms = 500
+mouse_accel_multiplier = 2.2
+
+[security]
+# V0: tienilo su LAN/Tailscale. Aggiungeremo pairing/token nella V1.
+allow_web_config_edit = true

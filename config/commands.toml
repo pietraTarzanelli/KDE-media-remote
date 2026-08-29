@@ -1,0 +1,11 @@
+[[commands]]
+name = "Blocca schermo"
+command = "loginctl lock-session"
+
+[[commands]]
+name = "Apri Dolphin"
+command = "dolphin"
+
+[[commands]]
+name = "Apri Konsole"
+command = "konsole"

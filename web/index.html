@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>KDE Media Remote</title>
+<style>
+:root{
+  font-family:system-ui,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{
+  margin:0;
+  background:#111;
+  color:#eee;
+  min-height:100svh;
+  display:flex;
+  justify-content:center;
+}
+.remote{
+  width:min(100vw,460px);
+  padding:16px;
+}
+.top,.media,.bindings{
+  display:grid;
+  gap:10px;
+}
+.top{grid-template-columns:repeat(3,1fr)}
+.media{grid-template-columns:repeat(4,1fr);margin-top:14px}
+.bindings{grid-template-columns:repeat(4,1fr);margin-top:18px}
+button{
+  border:1px solid #444;
+  background:#202020;
+  color:#fff;
+  border-radius:15px;
+  min-height:58px;
+  font-size:20px;
+  touch-action:none;
+}
+button:active{transform:scale(.96);background:#333}
+
+.dpad{
+  position:relative;
+  width:min(82vw,350px);
+  aspect-ratio:1;
+  margin:18px auto;
+}
+.outer,.inner{
+  position:absolute;
+  inset:0;
+}
+.inner{inset:22%}
+.dpad button{
+  position:absolute;
+  border-radius:13px;
+}
+.outer .up,.outer .down{
+  left:35%;
+  width:30%;
+  height:20%;
+}
+.outer .up{top:3%}
+.outer .down{bottom:3%}
+
+.outer .left,.outer .right{
+  top:38%;
+  height:24%;
+  width:20%;
+}
+.outer .left{left:3%}
+.outer .right{right:3%}
+
+/* inner mouse D-pad stays compact around the click button */
+.inner .up{top:0;left:35%;width:30%;height:25%}
+.inner .down{bottom:0;left:35%;width:30%;height:25%}
+.inner .left{left:0;top:35%;height:30%;width:25%}
+.inner .right{right:0;top:35%;height:30%;width:25%}
+.outer button{background:#1d1d1d}
+.inner button{background:#292929;font-size:24px}
+.center{
+  position:absolute;
+  inset:40%;
+  width:20%;
+  height:20%;
+  min-height:0;
+  border-radius:50%;
+  z-index:4;
+}
+.shortcuts{
+ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px;
+}
+.small{font-size:14px}
+#commandsPanel{
+ display:none;
+ margin-top:14px;
+ border:1px solid #333;
+ border-radius:14px;
+ padding:12px;
+}
+.binding-btn{
+  position:relative;
+  overflow:hidden;
+  min-height:78px;
+  padding:8px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.binding-btn img{
+  width:46px;
+  height:46px;
+  object-fit:contain;
+  display:block;
+}
+.binding-btn .fallback-name{
+  line-height:1.05;
+  font-size:14px;
+  word-break:break-word;
+  text-align:center;
+}
+.command{width:100%;margin:5px 0;text-align:left;padding:0 15px}
+form{display:grid;gap:8px;margin-top:10px}
+input{font-size:16px;padding:12px;border-radius:10px;border:1px solid #444;background:#181818;color:#fff}
+</style>
+</head>
+<body>
+<main class="remote">
+  <section class="top">
+    <button data-key="power">⏻</button>
+    <a href="/keyboard"><button style="width:100%">⌨</button></a>
+    <button id="commandsBtn">☰</button>
+  </section>
+
+  <section class="dpad">
+    <div class="outer">
+      <button class="up" data-key="up">↑</button>
+      <button class="down" data-key="down">↓</button>
+      <button class="left" data-key="left">←</button>
+      <button class="right" data-key="right">→</button>
+    </div>
+
+    <div class="inner">
+      <button class="up mouse" data-dir="up">△</button>
+      <button class="down mouse" data-dir="down">▽</button>
+      <button class="left mouse" data-dir="left">◁</button>
+      <button class="right mouse" data-dir="right">▷</button>
+    </div>
+
+    <button class="center" id="leftClick">●</button>
+  </section>
+
+  <section class="media">
+    <button data-key="volume_up">＋</button>
+    <button data-key="play_pause">⏯</button>
+    <button data-key="next">⏭</button>
+    <button id="rightClick">R</button>
+    <button data-key="volume_down">−</button>
+    <button data-key="mute">🔇</button>
+    <button data-key="previous">⏮</button>
+    <button data-key="esc">⎋</button>
+  </section>
+
+  <section class="bindings" id="bindings"></section>
+
+  <section id="commandsPanel">
+    <div id="commands"></div>
+    <form id="addCommand">
+      <input name="name" placeholder="Nome comando">
+      <input name="command" placeholder="Comando shell">
+      <button type="submit" class="small">+ Aggiungi comando</button>
+    </form>
+  </section>
+</main>
+
+<script>
+const wsProto = location.protocol === "https:" ? "wss:" : "ws:";
+let ws = new WebSocket(`${wsProto}//${location.host}/ws`);
+
+function send(payload){
+  if(ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(payload));
+}
+
+document.querySelectorAll("[data-key]").forEach(btn => {
+  btn.addEventListener("pointerdown", e => {
+    e.preventDefault();
+    send({action:"key", key:btn.dataset.key});
+  });
+});
+
+document.getElementById("leftClick").onpointerdown = e => {
+  e.preventDefault(); send({action:"mouse_click"});
+};
+document.getElementById("rightClick").onpointerdown = e => {
+  e.preventDefault(); send({action:"right_click"});
+};
+
+// Il comportamento evidenziato:
+// tap breve -> parte immediatamente un piccolo movimento.
+// pressione lunga -> il server continua a muovere ogni N ms;
+// dopo mouse_accel_after_ms aumenta lo step.
+document.querySelectorAll(".mouse").forEach(btn => {
+  const stop = e => {
+    e.preventDefault();
+    send({action:"mouse_stop", direction:btn.dataset.dir});
+    try{ btn.releasePointerCapture(e.pointerId); }catch{}
+  };
+
+  btn.addEventListener("pointerdown", e => {
+    e.preventDefault();
+    btn.setPointerCapture(e.pointerId);
+    send({action:"mouse_start", direction:btn.dataset.dir});
+  });
+
+  btn.addEventListener("pointerup", stop);
+  btn.addEventListener("pointercancel", stop);
+  btn.addEventListener("lostpointercapture", () =>
+    send({action:"mouse_stop", direction:btn.dataset.dir})
+  );
+});
+
+async function loadBindings(){
+  const data = await fetch("/api/bindings").then(r=>r.json());
+  const box = document.getElementById("bindings");
+  box.innerHTML="";
+
+  data.sort((a,b)=>a.slot-b.slot).forEach(b=>{
+    const btn=document.createElement("button");
+    btn.className="binding-btn";
+    btn.title=b.desktop_info?.name || b.name || `Binding ${b.slot}`;
+
+    const useFallback = () => {
+      btn.innerHTML="";
+      btn.style.background=b.color || "#333";
+
+      const label=document.createElement("span");
+      label.className="fallback-name";
+      label.textContent=b.name || b.desktop_info?.name || `#${b.slot}`;
+      btn.appendChild(label);
+    };
+
+    if(b.has_icon && b.icon_url){
+      // If there is a real .desktop icon, show ONLY the icon.
+      btn.style.background="#202020";
+      const img=document.createElement("img");
+      img.src=b.icon_url;
+      img.alt=b.desktop_info?.name || b.name || "";
+      img.onload=()=>{};
+      img.onerror=useFallback;
+      btn.appendChild(img);
+    }else{
+      // No icon -> exactly the requested fallback: name + configured color.
+      useFallback();
+    }
+
+    btn.onclick=()=>fetch(`/api/binding/${b.slot}`,{method:"POST"});
+    box.appendChild(btn);
+  });
+}
+
+async function loadCommands(){
+  const data=await fetch("/api/commands").then(r=>r.json());
+  const box=document.getElementById("commands");
+  box.innerHTML="";
+  data.forEach((c,i)=>{
+    const btn=document.createElement("button");
+    btn.className="command small";
+    btn.textContent=c.name;
+    btn.onclick=()=>fetch(`/api/command/${i}`,{method:"POST"});
+    box.appendChild(btn);
+  });
+}
+
+document.getElementById("commandsBtn").onclick=()=>{
+  const p=document.getElementById("commandsPanel");
+  p.style.display=p.style.display==="block"?"none":"block";
+};
+
+document.getElementById("addCommand").onsubmit=async e=>{
+  e.preventDefault();
+  const f=new FormData(e.target);
+  await fetch("/api/commands",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({name:f.get("name"),command:f.get("command")})
+  });
+  e.target.reset();
+  loadCommands();
+};
+
+loadBindings();
+loadCommands();
+</script>
+</body>
+</html>
