@@ -62,7 +62,15 @@ def api_binding_icon(slot: int):
     if not icon_path:
         raise HTTPException(404, "Icona non trovata")
 
-    return FileResponse(icon_path, media_type=icon_content_type(icon_path))
+    return FileResponse(
+        icon_path,
+        media_type=icon_content_type(icon_path),
+        headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        },
+    )
 
 @app.post("/api/command/{index}")
 def api_run_command(index: int):
