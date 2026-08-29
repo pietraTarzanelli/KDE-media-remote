@@ -243,7 +243,7 @@ async function loadBindings(){
       // If there is a real .desktop icon, show ONLY the icon.
       btn.style.background="#202020";
       const img=document.createElement("img");
-      img.src=b.icon_url;
+      img.src=`${b.icon_url}?v=${Date.now()}`;
       img.alt=b.desktop_info?.name || b.name || "";
       img.onload=()=>{};
       img.onerror=useFallback;
