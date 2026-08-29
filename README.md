@@ -1,4 +1,4 @@
-# KDE Media Remote — V0
+# KDE Media Remote — V0.5
 
 Prima stesura focalizzata su CachyOS + KDE Plasma + Wayland.
 
