@@ -1,16 +1,79 @@
 <!doctype html>
 <html lang="it">
 <head>
+
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+
+<meta
+  name="viewport"
+  content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover"
+>
+
 <title>Keyboard Remote</title>
+
+<!-- PWA -->
+<link rel="manifest" href="/static/manifest.webmanifest">
+
+<meta name="theme-color" content="#111111">
+
+<!-- iPhone / iPad standalone -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="KDE Remote">
+
+<link rel="apple-touch-icon" href="/static/icon-192.png">
+
 <style>
-*{box-sizing:border-box}
-body{font-family:system-ui;background:#111;color:white;margin:0}
-main{max-width:460px;margin:auto;padding:16px}
-.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-button,input,textarea{min-height:58px;border-radius:13px;border:1px solid #444;background:#222;color:white;font-size:17px}
-button.held{outline:3px solid white;background:#555}
+*{
+  box-sizing:border-box;
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
+  -webkit-user-select:none;
+  -webkit-touch-callout:none;
+}
+
+body{
+  font-family:system-ui;
+  background:#111;
+  color:white;
+  margin:0;
+}
+
+main{
+  max-width:460px;
+  margin:auto;
+  padding:
+    calc(16px + env(safe-area-inset-top))
+    16px
+    16px;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+}
+
+button,input,textarea{
+  min-height:58px;
+  border-radius:13px;
+  border:1px solid #444;
+  background:#222;
+  color:white;
+  font-size:17px;
+}
+
+button{
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+button.held{
+  outline:3px solid white;
+  background:#555;
+}
+
 #phoneKeyboard{
   width:100%;
   margin-top:18px;
@@ -19,11 +82,20 @@ button.held{outline:3px solid white;background:#555}
   resize:none;
   min-height:120px;
 }
-.hold{display:flex;gap:10px;align-items:center;margin:15px 0}
+
+.hold{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  margin:15px 0;
+}
 </style>
 </head>
+
 <body>
+
 <main>
+
   <button onclick="location.href='/'">← Back</button>
 
   <div class="hold">
@@ -31,165 +103,347 @@ button.held{outline:3px solid white;background:#555}
     <label for="holdMode">Tieni premuti i tasti speciali</label>
   </div>
 
-<section class="grid">
-  <button data-mod="ctrl">Ctrl</button>
-  <button data-mod="alt">Alt</button>
-  <button data-mod="meta">Meta</button>
-  <button data-key="tab">Tab</button>
+  <section class="grid">
 
-  <button data-key="c">Copy</button>
-  <button data-key="x">Cut</button>
-  <button data-key="v">Paste</button>
-  <button data-key="esc">Esc</button>
+    <button data-mod="ctrl">Ctrl</button>
+    <button data-mod="alt">Alt</button>
+    <button data-mod="meta">Meta</button>
+    <button data-key="tab">Tab</button>
 
-  <button data-key="left">←</button>
-  <button data-key="down">↓</button>
-  <button data-key="up">↑</button>
-  <button data-key="right">→</button>
-</section>
+    <button data-key="c">Copy</button>
+    <button data-key="x">Cut</button>
+    <button data-key="v">Paste</button>
+    <button data-key="esc">⎋</button>
 
-  <textarea id="phoneKeyboard"
-            rows="4"
-            autocomplete="off"
-            autocapitalize="none"
-            autocorrect="off"
-            spellcheck="false"
-            enterkeyhint="enter"
-            placeholder="Tocca qui per usare la tastiera del telefono"></textarea>
+    <button data-key="left">←</button>
+    <button data-key="down">↓</button>
+    <button data-key="up">↑</button>
+    <button data-key="right">→</button>
+
+    <button data-action="scroll_up">⇈</button>
+    <button data-action="scroll_down">⇊</button>
+
+  </section>
+
+  <textarea
+    id="phoneKeyboard"
+    rows="4"
+    autocomplete="off"
+    autocapitalize="none"
+    autocorrect="off"
+    spellcheck="false"
+    enterkeyhint="enter"
+    placeholder="Tocca qui per usare la tastiera del telefono">
+  </textarea>
+
 </main>
 
 <script>
-const wsProto = location.protocol === "https:" ? "wss:" : "ws:";
-const ws=new WebSocket(`${wsProto}//${location.host}/ws`);
-const send=p=>ws.readyState===1&&ws.send(JSON.stringify(p));
-const hold=document.getElementById("holdMode");
 
-document.querySelectorAll("[data-key]").forEach(b=>{
-  b.onclick=()=>send({action:"key",key:b.dataset.key});
-});
+const wsProto =
+  location.protocol === "https:"
+    ? "wss:"
+    : "ws:";
 
-document.querySelectorAll("[data-mod]").forEach(b=>{
-  b.onclick=()=>{
-    const key=b.dataset.mod;
-    if(hold.checked){
-      send({action:"modifier_toggle",key});
-    }else{
-      send({action:"key",key});
-    }
-  };
-});
+const ws =
+  new WebSocket(`${wsProto}//${location.host}/ws`);
 
-ws.onmessage=e=>{
-  const m=JSON.parse(e.data);
-  if(m.type==="held_modifiers"){
-    document.querySelectorAll("[data-mod]").forEach(b=>{
-      b.classList.toggle("held",m.keys.includes(b.dataset.mod));
-    });
+const send = p =>
+  ws.readyState === 1 &&
+  ws.send(JSON.stringify(p));
+
+const hold =
+  document.getElementById("holdMode");
+
+
+/* TASTI NORMALI */
+
+document
+  .querySelectorAll("[data-key]")
+  .forEach(b => {
+
+    b.onclick = () =>
+      send({
+        action:"key",
+        key:b.dataset.key
+      });
+
+  });
+
+
+/* AZIONI SPECIALI: SCROLL */
+
+document
+  .querySelectorAll("[data-action]")
+  .forEach(b => {
+
+    b.onclick = () =>
+      send({
+        action:b.dataset.action
+      });
+
+  });
+
+
+/* MODIFICATORI CTRL / ALT / META */
+
+document
+  .querySelectorAll("[data-mod]")
+  .forEach(b => {
+
+    b.onclick = () => {
+
+      const key =
+        b.dataset.mod;
+
+      if(hold.checked){
+
+        send({
+          action:"modifier_toggle",
+          key
+        });
+
+      }else{
+
+        send({
+          action:"key",
+          key
+        });
+
+      }
+    };
+  });
+
+
+/* STATO MODIFICATORI PREMUTI */
+
+ws.onmessage = e => {
+
+  const m =
+    JSON.parse(e.data);
+
+  if(m.type === "held_modifiers"){
+
+    document
+      .querySelectorAll("[data-mod]")
+      .forEach(b => {
+
+        b.classList.toggle(
+          "held",
+          m.keys.includes(
+            b.dataset.mod
+          )
+        );
+
+      });
   }
 };
 
-const input=document.getElementById("phoneKeyboard");
 
-/*
-  V0.4: textarea -> remote PC synchronization by VALUE DIFF.
-
-  We no longer trust individual iOS key events. Safari can emit different
-  event sequences for normal typing, Backspace, predictive text, paste,
-  composition, accents, etc.
-
-  Instead we remember the previous textarea value and, on every `input`,
-  calculate the smallest replacement that turns OLD into NEW:
-
-      common prefix + [old middle] -> [new middle] + common suffix
-
-  Remote action:
-      Backspace once for every removed character
-      type the newly inserted substring
-
-  This makes Backspace and normal continuous typing work as actual text.
-*/
+const input =
+  document.getElementById("phoneKeyboard");
 
 let previousValue = "";
+
 
 function codepoints(str){
   return Array.from(str);
 }
 
-function commonPrefixLength(a, b){
-  const aa=codepoints(a), bb=codepoints(b);
-  let i=0;
-  while(i<aa.length && i<bb.length && aa[i]===bb[i]) i++;
+
+function commonPrefixLength(a,b){
+
+  const aa =
+    codepoints(a);
+
+  const bb =
+    codepoints(b);
+
+  let i = 0;
+
+  while(
+    i < aa.length &&
+    i < bb.length &&
+    aa[i] === bb[i]
+  ){
+    i++;
+  }
+
   return i;
 }
 
-function commonSuffixLength(a, b, prefixLen){
-  const aa=codepoints(a), bb=codepoints(b);
-  let i=0;
+
+function commonSuffixLength(
+  a,
+  b,
+  prefixLen
+){
+
+  const aa =
+    codepoints(a);
+
+  const bb =
+    codepoints(b);
+
+  let i = 0;
+
   while(
+
     i < aa.length-prefixLen &&
+
     i < bb.length-prefixLen &&
-    aa[aa.length-1-i] === bb[bb.length-1-i]
-  ) i++;
+
+    aa[aa.length-1-i] ===
+    bb[bb.length-1-i]
+
+  ){
+    i++;
+  }
+
   return i;
 }
+
 
 function sendBackspaces(count){
-  for(let i=0;i<count;i++){
-    send({action:"key", key:"backspace"});
+
+  for(
+    let i=0;
+    i<count;
+    i++
+  ){
+
+    send({
+      action:"key",
+      key:"backspace"
+    });
+
   }
 }
 
-input.addEventListener("input", () => {
-  const oldValue = previousValue;
-  const newValue = input.value;
 
-  const oldChars = codepoints(oldValue);
-  const newChars = codepoints(newValue);
+input.addEventListener(
+  "input",
+  () => {
 
-  const prefixLen = commonPrefixLength(oldValue, newValue);
-  const suffixLen = commonSuffixLength(oldValue, newValue, prefixLen);
+    const oldValue =
+      previousValue;
 
-  const removedCount = oldChars.length - prefixLen - suffixLen;
-  const inserted = newChars
-    .slice(prefixLen, newChars.length - suffixLen)
-    .join("");
+    const newValue =
+      input.value;
 
-  if(removedCount > 0){
-    sendBackspaces(removedCount);
+    const oldChars =
+      codepoints(oldValue);
+
+    const newChars =
+      codepoints(newValue);
+
+    const prefixLen =
+      commonPrefixLength(
+        oldValue,
+        newValue
+      );
+
+    const suffixLen =
+      commonSuffixLength(
+        oldValue,
+        newValue,
+        prefixLen
+      );
+
+    const removedCount =
+      oldChars.length
+      - prefixLen
+      - suffixLen;
+
+    const inserted =
+      newChars
+        .slice(
+          prefixLen,
+          newChars.length-suffixLen
+        )
+        .join("");
+
+
+    if(removedCount > 0){
+
+      sendBackspaces(
+        removedCount
+      );
+
+    }
+
+
+    if(inserted){
+
+      const parts =
+        inserted.split("\n");
+
+      parts.forEach(
+        (part,i) => {
+
+          if(part){
+
+            send({
+              action:"text",
+              text:part
+            });
+
+          }
+
+          if(
+            i <
+            parts.length-1
+          ){
+
+            send({
+              action:"key",
+              key:"enter"
+            });
+
+          }
+
+        }
+      );
+    }
+
+
+    previousValue =
+      newValue;
+
+
+    if(
+      previousValue.length > 2000 &&
+      input.selectionStart ===
+      input.value.length
+    ){
+
+      previousValue =
+        previousValue.slice(-500);
+
+      input.value =
+        previousValue;
+
+      input.setSelectionRange(
+        input.value.length,
+        input.value.length
+      );
+
+    }
   }
+);
 
-  if(inserted){
-    /*
-      Split real line breaks from normal text because ydotool `type` should
-      not be responsible for Enter.
-    */
-    const parts = inserted.split("\n");
-    parts.forEach((part, i) => {
-      if(part) send({action:"text", text:part});
-      if(i < parts.length-1) send({action:"key", key:"enter"});
-    });
+
+input.addEventListener(
+  "focus",
+  () => {
+
+    previousValue =
+      input.value;
+
   }
+);
 
-  previousValue = newValue;
-
-  /*
-    Prevent the local field from growing forever. We only trim when the
-    caret is at the end, and we trim BOTH local snapshots without sending
-    anything remotely.
-  */
-  if(previousValue.length > 2000 && input.selectionStart === input.value.length){
-    previousValue = previousValue.slice(-500);
-    input.value = previousValue;
-    input.setSelectionRange(input.value.length, input.value.length);
-  }
-});
-
-/*
-  If Safari clears/reloads the page, start from the actual visible value.
-*/
-input.addEventListener("focus", () => {
-  previousValue = input.value;
-});
 </script>
+
 </body>
 </html>
