@@ -1,0 +1,27 @@
+/* Overlay dello switch nativo usato per l'haptic su iOS (vedi haptic.js).
+ *
+ * Deve restare un controllo nativo: non toccare appearance, bordi o
+ * dimensioni intrinseche, altrimenti WebKit smette di produrre il tick.
+ * Serve solo a renderlo invisibile e a fargli coprire tutto il pulsante.
+ * La forma ricalca quella della tecnica verificata su iOS 26.5.
+ */
+
+.kmr-haptic-switch{
+  position:absolute;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  margin:0;
+  opacity:0;
+  z-index:2;
+  pointer-events:auto;
+  touch-action:none;
+  -webkit-tap-highlight-color:transparent;
+}
+
+/* Interruttore FEEDBACK_APTICO su OFF: gli switch spariscono e i pulsanti
+ * tornano a ricevere i tap come prima. */
+body.kmr-haptic-off .kmr-haptic-switch{
+  display:none !important;
+}

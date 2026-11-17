@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="it">
+
+<head>
+
+<meta charset="utf-8">
+
+<meta
+  name="viewport"
+  content="width=device-width,initial-scale=1,viewport-fit=cover"
+>
+
+<title>KMR · test aptico</title>
+
+<link rel="stylesheet" href="/static/haptic.css?v=1">
+
+<style>
+:root{
+  color-scheme:dark;
+  font-family:"DejaVu Sans Mono",ui-monospace,Menlo,monospace;
+  --bg:#050805;
+  --card:#0D1410;
+  --stroke:#1B4D2A;
+  --green:#00FF41;
+  --dim:#3F8A5A;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  min-height:100svh;
+  padding:20px 16px 40px;
+  background:var(--bg);
+  color:var(--dim);
+}
+
+h1{
+  margin:0 0 4px;
+  font-size:15px;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  color:var(--green);
+}
+
+p{line-height:1.45;font-size:12px}
+
+.meta{
+  margin:10px 0 20px;
+  padding:10px 12px;
+  border-radius:8px;
+  background:var(--card);
+  box-shadow:inset 0 0 0 1px var(--stroke);
+  font-size:10px;
+  word-break:break-word;
+}
+
+section{
+  margin:0 0 14px;
+  padding:12px;
+  border-radius:10px;
+  background:var(--card);
+  box-shadow:inset 0 0 0 1px var(--stroke);
+}
+
+h2{
+  margin:0 0 6px;
+  font-size:11px;
+  letter-spacing:.5px;
+  text-transform:uppercase;
+  color:var(--green);
+}
+
+.hint{font-size:10px;color:var(--dim)}
+
+.out{
+  display:block;
+  margin-top:8px;
+  font-size:10px;
+  color:var(--green);
+}
+
+button{
+  padding:12px 16px;
+  border:0;
+  border-radius:8px;
+  background:var(--green);
+  color:#03140A;
+  font:inherit;
+  font-size:12px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.5px;
+  cursor:pointer;
+  touch-action:manipulation;
+}
+
+/* lo switch visibile del test 1 deve restare nativo: solo ingrandito */
+#visibleSwitch{
+  width:66px;
+  height:38px;
+  margin-top:8px;
+}
+</style>
+
+</head>
+
+<body>
+
+<h1>Test feedback aptico</h1>
+<p>
+  Questa pagina serve a capire <b>perche'</b> il telecomando non vibra.
+  Prova i tre test nell'ordine, tenendo il dito un attimo su ogni controllo.
+</p>
+
+<div class="meta" id="meta">…</div>
+
+<section>
+  <h2>1 · Switch di sistema (visibile)</h2>
+  <p class="hint">
+    Tocca lo switch qui sotto. Se NON vibra nemmeno questo, il problema
+    non e' il codice: controlla Impostazioni &rarr; Suoni e feedback
+    tattili &rarr; "Feedback tattili del sistema" attivo (e
+    Accessibilita' &rarr; Tocca &rarr; Vibrazione).
+  </p>
+  <input type="checkbox" switch id="visibleSwitch" aria-label="Switch di prova">
+  <span class="out" id="out1">in attesa di un tocco…</span>
+</section>
+
+<section>
+  <h2>2 · Pulsante con overlay nativo</h2>
+  <p class="hint">
+    E' la tecnica usata dal telecomando da iOS 26.5 in poi: uno switch
+    invisibile sopra il pulsante. Il tap deve vibrare E incrementare il
+    contatore (altrimenti l'overlay blocca i click).
+  </p>
+  <button type="button" id="overlayBtn">Tocca qui</button>
+  <span class="out" id="out2">tap: 0</span>
+</section>
+
+<section>
+  <h2>3 · Click programmatico (vecchia tecnica)</h2>
+  <p class="hint">
+    Su iOS 26.5+ non deve vibrare: e' esattamente cio' che Apple ha
+    bloccato. Se qui vibra ma il test 2 no, il problema e' nel nostro
+    overlay, non nel sistema.
+  </p>
+  <button type="button" id="programBtn">Click da script</button>
+  <span class="out" id="out3">tap: 0</span>
+</section>
+
+<script src="/static/haptic.js?v=2"></script>
+<script>
+const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+  (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
+document.getElementById("meta").textContent =
+  "iOS: " + (ios ? "sì" : "no") +
+  " · switch supportato: " + ("available" in window.KMRHaptic) +
+  " · UA: " + navigator.userAgent;
+
+// il telecomando puo' avere il feedback disattivato: per il test lo
+// forziamo attivo solo su questa pagina (la preferenza non viene salvata)
+document.body.classList.remove("kmr-haptic-off");
+
+let n1 = 0;
+const s1 = document.getElementById("visibleSwitch");
+const o1 = document.getElementById("out1");
+s1.addEventListener("change", () => {
+  n1++;
+  o1.textContent = "toggle: " + n1 + " (se non hai sentito nulla, è il sistema)";
+});
+
+let n2 = 0;
+const b2 = document.getElementById("overlayBtn");
+const o2 = document.getElementById("out2");
+KMRHaptic.attach(b2);
+b2.addEventListener("click", () => {
+  n2++;
+  o2.textContent = "tap: " + n2 + " (click ricevuto)";
+});
+
+let n3 = 0;
+const b3 = document.getElementById("programBtn");
+const o3 = document.getElementById("out3");
+b3.addEventListener("click", () => {
+  n3++;
+  o3.textContent = "tap: " + n3;
+
+  // vecchia tecnica: input switch nascosto + label.click()
+  const label = document.createElement("label");
+  label.setAttribute("aria-hidden", "true");
+  label.style.cssText =
+    "position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0;" +
+    "pointer-events:none;overflow:hidden";
+
+  const input = document.createElement("input");
+  input.type = "checkbox";
+  input.setAttribute("switch", "");
+  label.appendChild(input);
+  document.body.appendChild(label);
+  label.click();
+
+  setTimeout(() => label.remove(), 1000);
+});
+</script>
+
+</body>
+
+</html>

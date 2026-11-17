@@ -1,0 +1,1003 @@
+<!doctype html>
+<html lang="it">
+<head>
+
+<meta charset="utf-8">
+
+<meta
+  name="viewport"
+  content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover"
+>
+
+<title>Keyboard Remote</title>
+
+<!-- PWA (manifest proprio: si installa come app separata dal remote) -->
+<link rel="manifest" href="/static/manifest-keyboard.webmanifest">
+
+<meta name="theme-color" content="#050805">
+
+<!-- iPhone / iPad standalone -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="KDE Keys">
+
+<link rel="apple-touch-icon" href="/static/icon-keyboard-192.png">
+
+<style>
+:root{
+  /* Palette Retro CRT (FigCraft "test.figcraft") */
+  --bg:#050805;
+  --frame:#0A0F0B;
+  --card:#0D1410;
+  --card-deep:#0B120D;
+  --chip:#0B100D;
+  --stroke:#1B4D2A;
+  --stroke-soft:#16351F;
+  --green:#00FF41;
+  --bright:#33FF66;
+  --light:#4DFF88;
+  --dim:#3E8A5A;
+  --label:#2E7D46;
+  --hint:#2E5A38;
+  --on-bright:#03140A;
+  --warn:#E0A93A;
+  --err:#E06A50;
+
+  --glow:0 0 10px rgba(51,255,102,.33);
+  --shadow:0 6px 18px rgba(0,0,0,.4);
+
+  color-scheme:dark;
+}
+
+*{  box-sizing:border-box;
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
+  -webkit-user-select:none;
+  -webkit-touch-callout:none;
+}
+
+body{
+  font-family:
+    "DejaVu Sans Mono",
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Consolas,
+    monospace;
+  color:var(--dim);
+  background:var(--bg);
+  margin:0;
+  min-height:100svh;
+  display:flex;
+  justify-content:center;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ── overlay CRT: scanline + vignettatura ────────────────── */
+
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:99;
+  pointer-events:none;
+  background:repeating-linear-gradient(
+    180deg,
+    rgba(0,255,65,.07) 0 1px,
+    transparent 1px 4.34px
+  );
+}
+
+body::after{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:99;
+  pointer-events:none;
+  opacity:.5;
+  background:radial-gradient(
+    ellipse at 50% 50%,
+    rgba(0,0,0,0) 45%,
+    rgba(0,0,0,.6) 100%
+  );
+}
+
+.sprite{
+  position:absolute;
+  width:0;
+  height:0;
+  overflow:hidden;
+}
+
+.ic{
+  width:20px;
+  height:20px;
+  flex:0 0 auto;
+  display:block;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:2;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+
+.glyph{
+  font-size:17px;
+  line-height:1;
+  font-weight:600;
+}
+
+main{
+  width:min(100%,460px);
+  margin:auto;
+  padding:
+    calc(14px + env(safe-area-inset-top))
+    16px
+    calc(20px + env(safe-area-inset-bottom));
+}
+
+/* ── header LCD ─────────────────────────────────────────── */
+
+.lcd{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  min-height:54px;
+  padding:10px 12px;
+  border-radius:10px;
+  background:var(--card);
+  box-shadow:inset 0 0 0 1px var(--stroke);
+}
+
+.lcd h1{
+  margin:0;
+  font-size:15px;
+  font-weight:700;
+  line-height:18px;
+  color:var(--green);
+  text-shadow:0 0 6px rgba(0,255,65,.4);
+}
+
+.lcd p{
+  margin:2px 0 0;
+  font-size:10px;
+  line-height:13px;
+  letter-spacing:.4px;
+  color:var(--dim);
+}
+
+.lcd .sub{
+  display:flex;
+  align-items:center;
+  gap:5px;
+  white-space:nowrap;
+}
+
+.lcd .sub i{
+  font-style:normal;
+  opacity:.55;
+}
+
+.pill{
+  margin-left:auto;
+  flex:0 0 auto;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  padding:5px 10px;
+  border-radius:999px;
+  background:var(--frame);
+  box-shadow:inset 0 0 0 1px var(--stroke);
+  font-size:9px;
+  font-weight:700;
+  letter-spacing:.8px;
+  text-transform:uppercase;
+  color:var(--dim);
+}
+
+.pill .dot{
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:currentColor;
+  box-shadow:0 0 4px currentColor;
+}
+
+.pill[data-state="online"]{
+  color:var(--green);
+}
+.pill[data-state="online"] .dot{
+  box-shadow:0 0 4px rgba(0,255,65,.67);
+}
+
+.pill[data-state="connecting"],
+.pill[data-state="stale"]{
+  color:var(--warn);
+}
+
+.pill[data-state="connecting"] .dot,
+.pill[data-state="stale"] .dot{
+  animation:blink 1.2s ease-in-out infinite;
+}
+
+.pill[data-state="offline"]{
+  color:var(--err);
+}
+
+@keyframes blink{
+  0%,100%{opacity:1}
+  50%{opacity:.25}
+}
+
+/* ── etichette sezione ─────────────────────────────────── */
+
+.sec{
+  margin:18px 0 8px;
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  color:var(--label);
+}
+
+/* ── back ──────────────────────────────────────────────── */
+
+.back{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  width:fit-content;
+  margin-top:10px;
+  padding:9px 14px;
+  border-radius:8px;
+  background:var(--card);
+  color:var(--green);
+  box-shadow:inset 0 0 0 1px var(--stroke);
+  font-size:9px;
+  font-weight:700;
+  letter-spacing:.6px;
+  text-transform:uppercase;
+  text-decoration:none;
+}
+
+.back:active{
+  transform:scale(.97);
+}
+
+/* ── hold switch ───────────────────────────────────────── */
+
+.hold{
+  display:flex;
+  align-items:center;
+  gap:11px;
+  margin-top:12px;
+  padding:11px 12px;
+  border-radius:10px;
+  background:var(--card);
+  box-shadow:inset 0 0 0 1px var(--stroke);
+  cursor:pointer;
+}
+
+.hold-ic{
+  flex:0 0 auto;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:34px;
+  height:34px;
+  border-radius:10px;
+  background:var(--chip);
+  color:var(--green);
+}
+
+.hold-txt{
+  min-width:0;
+  flex:1 1 auto;
+}
+
+.hold-txt b{
+  display:block;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.5px;
+  text-transform:uppercase;
+  color:var(--green);
+}
+
+.hold-txt small{
+  display:block;
+  margin-top:2px;
+  font-size:9px;
+  font-weight:400;
+  line-height:1.3;
+  color:var(--hint);
+}
+
+#holdMode{
+  flex:0 0 auto;
+  -webkit-appearance:none;
+  appearance:none;
+  position:relative;
+  width:44px;
+  height:26px;
+  margin:0;
+  border:0;
+  border-radius:999px;
+  background:var(--chip);
+  box-shadow:inset 0 0 0 1px var(--stroke);
+  cursor:pointer;
+  transition:background .18s ease,box-shadow .18s ease;
+}
+
+#holdMode::after{
+  content:"";
+  position:absolute;
+  top:3px;
+  left:3px;
+  width:20px;
+  height:20px;
+  border-radius:50%;
+  background:var(--stroke);
+  box-shadow:0 1px 3px rgba(0,0,0,.33);
+  transition:transform .18s ease,background .18s ease;
+}
+
+#holdMode:checked{
+  background:var(--green);
+  box-shadow:0 0 8px rgba(0,255,65,.33);
+}
+
+#holdMode:checked::after{
+  background:var(--chip);
+  transform:translateX(18px);
+}
+
+/* ── griglia tasti ─────────────────────────────────────── */
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+}
+
+.key{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:2px;
+  min-height:53px;
+  padding:6px 2px;
+  border:0;
+  border-radius:8px;
+  background:var(--card);
+  color:var(--green);
+  box-shadow:inset 0 0 0 1px var(--stroke);
+  font:inherit;
+  cursor:pointer;
+  touch-action:manipulation;
+  transition:background .15s ease,color .15s ease,box-shadow .15s ease;
+}
+
+.key .ic{
+  width:18px;
+  height:18px;
+}
+
+.key .lbl{
+  font-size:8px;
+  font-weight:700;
+  letter-spacing:.5px;
+  text-transform:uppercase;
+  line-height:1.15;
+  text-align:center;
+  color:var(--dim);
+}
+
+.key-bare{
+  font-size:12.5px;
+  font-weight:700;
+  letter-spacing:.5px;
+  text-transform:uppercase;
+  color:var(--green);
+}
+
+.key:active,
+.key.kmr-pressed{
+  transform:scale(.95);
+}
+
+.key.held{
+  background:#122016;
+  box-shadow:inset 0 0 0 1.5px var(--green),0 0 6px rgba(0,255,65,.25);
+}
+
+.key.held .lbl,
+.key.held .ic,
+.key.held.key-bare{
+  color:var(--light);
+}
+
+/* ── area testo ────────────────────────────────────────── */
+
+.input-head{
+  display:flex;
+  align-items:baseline;
+  gap:8px;
+}
+
+.input-head .sec{
+  margin-bottom:8px;
+}
+
+.state{
+  font-size:9px;
+  font-weight:700;
+  letter-spacing:.8px;
+  text-transform:uppercase;
+  color:var(--green);
+}
+
+#phoneKeyboard{
+  display:block;
+  width:100%;
+  min-height:170px;
+  margin-top:0;
+  padding:14px;
+  resize:none;
+  border:0;
+  border-radius:10px;
+  background:var(--chip);
+  box-shadow:inset 0 0 0 1px var(--stroke);
+  color:var(--green);
+  font:inherit;
+  font-size:14px;
+  line-height:1.45;
+}
+
+#phoneKeyboard::placeholder{
+  color:var(--dim);
+  opacity:1;
+}
+
+.hint{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  margin:9px 2px 0;
+  font-size:9px;
+  font-weight:400;
+  letter-spacing:.3px;
+  text-transform:uppercase;
+  color:var(--hint);
+}
+
+.hint .ic{
+  width:14px;
+  height:14px;
+}
+</style>
+<link rel="stylesheet" href="/static/haptic.css?v=1">
+</head>
+
+<body>
+
+<svg class="sprite" aria-hidden="true" focusable="false">
+  <symbol id="i-arrow-left" viewBox="0 0 24 24">
+    <path d="m12 19-7-7 7-7"/>
+    <path d="M19 12H5"/>
+  </symbol>
+  <symbol id="i-arrow-down" viewBox="0 0 24 24">
+    <path d="M12 5v14"/>
+    <path d="m19 12-7 7-7-7"/>
+  </symbol>
+  <symbol id="i-arrow-up" viewBox="0 0 24 24">
+    <path d="m5 12 7-7 7 7"/>
+    <path d="M12 19V5"/>
+  </symbol>
+  <symbol id="i-arrow-right" viewBox="0 0 24 24">
+    <path d="M5 12h14"/>
+    <path d="m12 5 7 7-7 7"/>
+  </symbol>
+
+  <symbol id="i-repeat" viewBox="0 0 24 24">
+    <path d="m17 2 4 4-4 4"/>
+    <path d="M3 11v-1a4 4 0 0 1 4-4h14"/>
+    <path d="m7 22-4-4 4-4"/>
+    <path d="M21 13v1a4 4 0 0 1-4 4H3"/>
+  </symbol>
+
+  <symbol id="i-copy" viewBox="0 0 24 24">
+    <rect width="14" height="14" x="8" y="8" rx="2"/>
+    <path d="M4 16a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2"/>
+  </symbol>
+
+  <symbol id="i-scissors" viewBox="0 0 24 24">
+    <circle cx="6" cy="6" r="3"/>
+    <path d="M8.12 8.12 12 12"/>
+    <path d="M20 4 8.12 15.88"/>
+    <circle cx="6" cy="18" r="3"/>
+    <path d="M14.8 14.8 20 20"/>
+  </symbol>
+
+  <symbol id="i-clipboard" viewBox="0 0 24 24">
+    <rect width="8" height="4" x="8" y="2" rx="1"/>
+    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+    <path d="M12 11h4"/>
+    <path d="M12 16h4"/>
+    <path d="M8 11h.01"/>
+    <path d="M8 16h.01"/>
+  </symbol>
+
+  <symbol id="i-chevrons-up" viewBox="0 0 24 24">
+    <path d="m17 11-5-5-5 5"/>
+    <path d="m17 18-5-5-5 5"/>
+  </symbol>
+  <symbol id="i-chevrons-down" viewBox="0 0 24 24">
+    <path d="m7 6 5 5 5-5"/>
+    <path d="m7 13 5 5 5-5"/>
+  </symbol>
+
+  <symbol id="i-text-cursor-input" viewBox="0 0 24 24">
+    <path d="M12 8h.01"/>
+    <path d="M11 8H8a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h3"/>
+    <path d="M16 8h1a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-1"/>
+    <rect width="20" height="16" x="2" y="4" rx="2"/>
+  </symbol>
+</svg>
+
+<main>
+
+  <a class="back" href="/">
+    <svg class="ic"><use href="#i-arrow-left"/></svg>
+    <span>Indietro</span>
+  </a>
+
+  <header class="lcd">
+    <div>
+      <h1>Tastiera remota</h1>
+      <p class="sub"><span>PebbleTV</span><i aria-hidden="true">•</i><span>Plasma Bigscreen</span></p>
+    </div>
+    <div class="pill" id="connPill" data-state="connecting">
+      <span class="dot"></span>
+      <span id="connTxt">Connessione&hellip;</span>
+    </div>
+  </header>
+
+  <label class="hold" for="holdMode">
+    <span class="hold-ic">
+      <svg class="ic"><use href="#i-repeat"/></svg>
+    </span>
+    <span class="hold-txt">
+      <b>Tieni premuti i tasti speciali</b>
+      <small>Per combinazioni come Ctrl + C</small>
+    </span>
+    <input id="holdMode" type="checkbox">
+  </label>
+
+  <p class="sec">&gt; TASTI_RAPIDI &#9646;</p>
+
+  <section class="grid">
+
+    <button type="button" class="key key-bare" data-mod="ctrl">Ctrl</button>
+    <button type="button" class="key key-bare" data-mod="alt">Alt</button>
+    <button type="button" class="key key-bare" data-mod="meta">Meta</button>
+    <button type="button" class="key key-bare" data-key="tab">Tab</button>
+
+    <button type="button" class="key" data-key="c">
+      <svg class="ic"><use href="#i-copy"/></svg>
+      <span class="lbl">Copy</span>
+    </button>
+    <button type="button" class="key" data-key="x">
+      <svg class="ic"><use href="#i-scissors"/></svg>
+      <span class="lbl">Cut</span>
+    </button>
+    <button type="button" class="key" data-key="v">
+      <svg class="ic"><use href="#i-clipboard"/></svg>
+      <span class="lbl">Paste</span>
+    </button>
+    <button type="button" class="key" data-key="esc">
+      <span class="glyph">&#9099;</span>
+      <span class="lbl">Esc</span>
+    </button>
+
+    <button type="button" class="key" data-key="left">
+      <svg class="ic"><use href="#i-arrow-left"/></svg>
+      <span class="lbl">Sinistra</span>
+    </button>
+    <button type="button" class="key" data-key="down">
+      <svg class="ic"><use href="#i-arrow-down"/></svg>
+      <span class="lbl">Gi&ugrave;</span>
+    </button>
+    <button type="button" class="key" data-key="up">
+      <svg class="ic"><use href="#i-arrow-up"/></svg>
+      <span class="lbl">Su</span>
+    </button>
+    <button type="button" class="key" data-key="right">
+      <svg class="ic"><use href="#i-arrow-right"/></svg>
+      <span class="lbl">Destra</span>
+    </button>
+
+    <button type="button" class="key" data-action="scroll_up">
+      <svg class="ic"><use href="#i-chevrons-up"/></svg>
+      <span class="lbl">Scroll su</span>
+    </button>
+    <button type="button" class="key" data-action="scroll_down">
+      <svg class="ic"><use href="#i-chevrons-down"/></svg>
+      <span class="lbl">Scroll gi&ugrave;</span>
+    </button>
+
+  </section>
+
+  <div class="input-head">
+    <p class="sec">&gt; TASTIERA_TELEFONO &#9646;</p>
+    <span class="state">Pronto</span>
+  </div>
+
+  <textarea
+    id="phoneKeyboard"
+    rows="4"
+    autocomplete="off"
+    autocapitalize="none"
+    autocorrect="off"
+    spellcheck="false"
+    enterkeyhint="enter"
+    placeholder="Tocca qui per usare la tastiera del telefono">
+  </textarea>
+
+  <p class="hint">
+    <svg class="ic"><use href="#i-text-cursor-input"/></svg>
+    Invio istantaneo al dispositivo
+  </p>
+
+</main>
+
+<script src="/static/haptic.js?v=2"></script>
+<script src="/static/connection.js"></script>
+<script>
+
+/* Se haptic.js non fosse raggiungibile (deploy parziale), la tastiera
+ * deve continuare a funzionare: nessun overlay, nessun feedback. */
+window.KMRHaptic = window.KMRHaptic || {
+  available: false,
+  attach: () => false,
+  attachAll: () => {},
+  fromSwitch: () => false,
+  setEnabled: value => !!value,
+  isEnabled: () => false
+};
+
+let setConnectionStatus = () => {};
+
+const conn = KMRConnection.create({
+  onStatus: state => setConnectionStatus(state)
+});
+
+const send = payload => conn.send(payload);
+
+const hold =
+  document.getElementById("holdMode");
+
+
+/* Overlay nativo per il feedback aptico: va aggiunto quando i pulsanti
+ * sono gia' nel DOM (vedi haptic.js). */
+KMRHaptic.attachAll("[data-key], [data-action], [data-mod]");
+
+
+/* TASTI NORMALI */
+
+document
+  .querySelectorAll("[data-key]")
+  .forEach(b => {
+
+    b.onclick = () => {
+
+      send({
+        action:"key",
+        key:b.dataset.key
+      });
+
+    };
+
+  });
+
+
+/* AZIONI SPECIALI: SCROLL */
+
+document
+  .querySelectorAll("[data-action]")
+  .forEach(b => {
+
+    b.onclick = () => {
+
+      send({
+        action:b.dataset.action
+      });
+
+    };
+
+  });
+
+
+/* MODIFICATORI CTRL / ALT / META */
+
+document
+  .querySelectorAll("[data-mod]")
+  .forEach(b => {
+
+    b.onclick = () => {
+
+      const key =
+        b.dataset.mod;
+
+      if(hold.checked){
+
+        send({
+          action:"modifier_toggle",
+          key
+        });
+
+      }else{
+
+        send({
+          action:"key",
+          key
+        });
+
+      }
+    };
+  });
+
+
+/* STATO MODIFICATORI PREMUTI */
+
+conn.onMessage(m => {
+
+  if(m.type === "held_modifiers"){
+
+    document
+      .querySelectorAll("[data-mod]")
+      .forEach(b => {
+
+        b.classList.toggle(
+          "held",
+          m.keys.includes(
+            b.dataset.mod
+          )
+        );
+
+      });
+  }
+});
+
+
+const input =
+  document.getElementById("phoneKeyboard");
+
+let previousValue = "";
+
+
+function codepoints(str){
+  return Array.from(str);
+}
+
+
+function commonPrefixLength(a,b){
+
+  const aa =
+    codepoints(a);
+
+  const bb =
+    codepoints(b);
+
+  let i = 0;
+
+  while(
+    i < aa.length &&
+    i < bb.length &&
+    aa[i] === bb[i]
+  ){
+    i++;
+  }
+
+  return i;
+}
+
+
+function commonSuffixLength(
+  a,
+  b,
+  prefixLen
+){
+
+  const aa =
+    codepoints(a);
+
+  const bb =
+    codepoints(b);
+
+  let i = 0;
+
+  while(
+
+    i < aa.length-prefixLen &&
+
+    i < bb.length-prefixLen &&
+
+    aa[aa.length-1-i] ===
+    bb[bb.length-1-i]
+
+  ){
+    i++;
+  }
+
+  return i;
+}
+
+
+function sendBackspaces(count){
+
+  for(
+    let i=0;
+    i<count;
+    i++
+  ){
+
+    send({
+      action:"key",
+      key:"backspace"
+    });
+
+  }
+}
+
+
+input.addEventListener(
+  "input",
+  () => {
+
+    const oldValue =
+      previousValue;
+
+    const newValue =
+      input.value;
+
+    const oldChars =
+      codepoints(oldValue);
+
+    const newChars =
+      codepoints(newValue);
+
+    const prefixLen =
+      commonPrefixLength(
+        oldValue,
+        newValue
+      );
+
+    const suffixLen =
+      commonSuffixLength(
+        oldValue,
+        newValue,
+        prefixLen
+      );
+
+    const removedCount =
+      oldChars.length
+      - prefixLen
+      - suffixLen;
+
+    const inserted =
+      newChars
+        .slice(
+          prefixLen,
+          newChars.length-suffixLen
+        )
+        .join("");
+
+
+    if(removedCount > 0){
+
+      sendBackspaces(
+        removedCount
+      );
+
+    }
+
+
+    if(inserted){
+
+      const parts =
+        inserted.split("\n");
+
+      parts.forEach(
+        (part,i) => {
+
+          if(part){
+
+            send({
+              action:"text",
+              text:part
+            });
+
+          }
+
+          if(
+            i <
+            parts.length-1
+          ){
+
+            send({
+              action:"key",
+              key:"enter"
+            });
+
+          }
+
+        }
+      );
+    }
+
+
+    previousValue =
+      newValue;
+
+
+    if(
+      previousValue.length > 2000 &&
+      input.selectionStart ===
+      input.value.length
+    ){
+
+      previousValue =
+        previousValue.slice(-500);
+
+      input.value =
+        previousValue;
+
+      input.setSelectionRange(
+        input.value.length,
+        input.value.length
+      );
+
+    }
+  }
+);
+
+
+input.addEventListener(
+  "focus",
+  () => {
+
+    previousValue =
+      input.value;
+
+  }
+);
+
+
+/* BADGE STATO CONNESSIONE (header)
+   Lo stato arriva dal modulo di connessione: online / connecting /
+   offline. La riconnessione e il ping sono gestiti in connection.js. */
+
+const connPill = document.getElementById("connPill");
+const connTxt = document.getElementById("connTxt");
+
+const CONN_LABEL = {
+  online: "Connesso",
+  connecting: "Connessione…",
+  offline: "Non connesso",
+  stale: "Server bloccato"
+};
+
+setConnectionStatus = state => {
+  if(connPill.dataset.state === state) return;
+  connPill.dataset.state = state;
+  connTxt.textContent = CONN_LABEL[state] || CONN_LABEL.offline;
+};
+
+conn.start();
+
+</script>
+
+</body>
+</html>

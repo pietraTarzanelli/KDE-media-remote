@@ -1,0 +1,1384 @@
+<!doctype html>
+<html lang="it">
+
+<head>
+
+<meta charset="utf-8">
+
+<!-- Su un desktop con puntatore fine la UI pensata per il telefono
+     lascia il posto alla modalità PC. /?ui=phone la forza; il link
+     nella pagina PC imposta la preferenza inversa. -->
+<script>
+(function () {
+  try {
+    var params = new URLSearchParams(location.search);
+    var forced = params.get("ui");
+
+    if (forced === "phone" || forced === "pc") {
+      localStorage.setItem("kmr.ui", forced);
+    }
+
+    var preference = localStorage.getItem("kmr.ui");
+    var desktop =
+      window.matchMedia("(pointer: fine) and (hover: hover)").matches &&
+      window.innerWidth >= 900;
+
+    if (desktop && preference !== "phone") {
+      location.replace("/pc");
+    }
+  } catch (e) {
+    /* localStorage o matchMedia possono essere negati: si resta qui */
+  }
+})();
+</script>
+
+<meta
+  name="viewport"
+  content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover"
+>
+
+<title>KDE Media Remote</title>
+
+
+<!-- PWA -->
+
+<link
+  rel="manifest"
+  href="/static/manifest.webmanifest"
+>
+
+<meta
+  name="theme-color"
+  content="#050805"
+>
+
+
+<!-- iPhone / iPad standalone mode -->
+
+<meta
+  name="apple-mobile-web-app-capable"
+  content="yes"
+>
+
+<meta
+  name="apple-mobile-web-app-status-bar-style"
+  content="default"
+>
+
+<meta
+  name="apple-mobile-web-app-title"
+  content="KDE Remote"
+>
+
+
+<!-- Icona Home Screen iOS -->
+
+<link
+  rel="apple-touch-icon"
+  href="/static/icon-192.png"
+>
+
+
+<style>
+:root{
+  /* Palette Retro CRT (FigCraft "test.figcraft") */
+  --bg:#050805;
+  --frame:#0A0F0B;
+  --card:#0D1410;
+  --card-deep:#0B120D;
+  --disc:#0C130E;
+  --disc-inner:#08100A;
+  --stroke:#1B4D2A;
+  --stroke-soft:#16351F;
+  --green:#00FF41;
+  --bright:#33FF66;
+  --light:#4DFF88;
+  --dim:#3F8A5A;
+  --label:#2E7D46;
+  --hint:#2E5A38;
+  --on-bright:#03140A;
+  --warn:#E0A93A;
+  --err:#E06A50;
+
+  --glow:0 0 10px rgba(51,255,102,.33);
+  --shadow:0 6px 18px rgba(0,0,0,.4);
+
+  color-scheme:dark;
+  font-family:
+    "DejaVu Sans Mono",
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Consolas,
+    monospace;
+}
+
+*{
+  box-sizing:border-box;
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
+  -webkit-user-select:none;
+  -webkit-touch-callout:none;
+}
+
+body{
+  margin:0;
+  min-height:100svh;
+  display:flex;
+  justify-content:center;
+  color:var(--dim);
+  background:var(--bg);
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ── overlay CRT: scanline + vignettatura ────────────────── */
+
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:99;
+  pointer-events:none;
+  background:repeating-linear-gradient(
+    180deg,
+    rgba(0,255,65,.07) 0 1px,
+    transparent 1px 4.34px
+  );
+}
+
+body::after{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:99;
+  pointer-events:none;
+  opacity:.5;
+  background:radial-gradient(
+    ellipse at 50% 50%,
+    rgba(0,0,0,0) 45%,
+    rgba(0,0,0,.6) 100%
+  );
+}
+
+.sprite{
+  position:absolute;
+  width:0;
+  height:0;
+  overflow:hidden;
+}
+
+.ic{
+  width:20px;
+  height:20px;
+  flex:0 0 auto;
+  display:block;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:2;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+
+.glyph{
+  font-size:17px;
+  line-height:1;
+  font-weight:600;
+}
+
+.remote{
+  width:min(100%,460px);
+  padding:
+    calc(14px + env(safe-area-inset-top))
+    16px
+    calc(20px + env(safe-area-inset-bottom));
+}
+
+/* ── header LCD ─────────────────────────────────────────── */
+
+.lcd{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  min-height:54px;
+  padding:10px 12px;
+  border-radius:10px;
+  background:var(--card);
+  box-shadow:inset 0 0 0 1px var(--stroke);
+}
+
+.lcd h1{
+  margin:0;
+  font-size:15px;
+  font-weight:700;
+  line-height:18px;
+  color:var(--green);
+  text-shadow:0 0 6px rgba(0,255,65,.4);
+}
+
+.lcd p{
+  margin:2px 0 0;
+  font-size:10px;
+  line-height:13px;
+  letter-spacing:.4px;
+  color:var(--dim);
+}
+
+.lcd .sub{
+  display:flex;
+  align-items:center;
+  gap:5px;
+  white-space:nowrap;
+}
+
+.lcd .sub i{
+  font-style:normal;
+  opacity:.55;
+}
+
+.pill{
+  margin-left:auto;
+  flex:0 0 auto;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  padding:5px 10px;
+  border-radius:999px;
+  background:var(--frame);
+  box-shadow:inset 0 0 0 1px var(--stroke);
+  font-size:9px;
+  font-weight:700;
+  letter-spacing:.8px;
+  text-transform:uppercase;
+  color:var(--dim);
+}
+
+.pill .dot{
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:currentColor;
+  box-shadow:0 0 4px currentColor;
+}
+
+.pill[data-state="online"]{
+  color:var(--green);
+}
+.pill[data-state="online"] .dot{
+  box-shadow:0 0 4px rgba(0,255,65,.67);
+}
+
+.pill[data-state="connecting"],
+.pill[data-state="stale"]{
+  color:var(--warn);
+}
+
+.pill[data-state="connecting"] .dot,
+.pill[data-state="stale"] .dot{
+  animation:blink 1.2s ease-in-out infinite;
+}
+
+.pill[data-state="offline"]{
+  color:var(--err);
+}
+
+@keyframes blink{
+  0%,100%{opacity:1}
+  50%{opacity:.25}
+}
+
+/* ── etichette sezione ─────────────────────────────────── */
+
+.sec{
+  margin:18px 0 8px;
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  color:var(--label);
+}
+
+/* ── comandi superiori ─────────────────────────────────── */
+
+.top{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+  /* stacco verticale sotto l'header LCD: senza, su telefono i tasti
+     Accensione/Tastiera/Menu risultavano attaccati al blocco "KDE Remote" */
+  margin-top:18px;
+}
+
+.ctl{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:3px;
+  /* altezza ridotta del 3%: la pagina finisce un po' piu' in alto,
+     lontano dalla zona del gesto di uscita della PWA */
+  min-height:calc(58px * .97);
+  padding:8px 4px;
+  border:0;
+  border-radius:10px;
+  background:var(--card);
+  color:var(--green);
+  box-shadow:inset 0 0 0 1px var(--stroke);
+  font:inherit;
+  font-size:9px;
+  font-weight:700;
+  letter-spacing:.6px;
+  text-transform:uppercase;
+  text-decoration:none;
+  text-align:center;
+  touch-action:none;
+  cursor:pointer;
+}
+
+.ctl:active,
+.ctl.kmr-pressed{
+  transform:scale(.96);
+}
+
+.ctl-primary{
+  /* come nel design: etichetta sopra, icona sotto */
+  flex-direction:column-reverse;
+  background:var(--bright);
+  color:var(--on-bright);
+  box-shadow:var(--glow);
+}
+
+.ctl-primary .lbl{
+  color:var(--on-bright);
+}
+
+/* ── click wheel ───────────────────────────────────────── */
+
+.dpad{
+  position:relative;
+  /* 300px ridotti del 3% -> 291px */
+  width:min(100%,291px);
+  aspect-ratio:1;
+  margin:14px auto 4px;
+  border-radius:50%;
+  background:var(--disc);
+  box-shadow:inset 0 0 0 1.5px var(--stroke);
+}
+
+/* dischi e anelli disegnati in CSS come nel design Retro CRT */
+.dpad::before{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:57%;
+  height:57%;
+  transform:translate(-50%,-50%);
+  border-radius:50%;
+  box-shadow:inset 0 0 0 1px var(--stroke);
+  z-index:1;
+  pointer-events:none;
+}
+
+.dpad::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:54.3%;
+  height:54.3%;
+  transform:translate(-50%,-50%);
+  border-radius:50%;
+  background:var(--disc-inner);
+  box-shadow:inset 0 0 0 1px var(--stroke-soft);
+  z-index:1;
+  pointer-events:none;
+}
+
+/* vettore della ruota generato da tools/gen_wheel.py (sostituito dai dischi CRT) */
+.wheel-art{
+  display:none;
+}
+
+.outer,
+.inner{
+  position:absolute;
+  inset:0;
+  /* i wrapper non intercettano i tap: solo i bottoni ricevono gli eventi */
+  pointer-events:none;
+  z-index:2;
+}
+
+.pad{
+  position:absolute;
+  pointer-events:auto;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:0;
+  border:0;
+  background:none;
+  font:inherit;
+  cursor:pointer;
+  touch-action:none;
+}
+
+.pad:active .ic,
+.pad.kmr-pressed .ic{
+  opacity:.55;
+}
+
+/* anello interno (in HTML: 4 frecce piene per il mouse), overlay invisibile */
+.outer .pad{
+  color:var(--label);
+}
+.outer .ic{
+  width:22px;
+  height:22px;
+  opacity:1;
+}
+
+/* wheel hit zones: GENERATO DA tools/gen_wheel.py - non modificare a mano */
+
+/* .outer -> anello interno R 46..79 (in HTML: frecce mouse) */
+.outer .up{
+  left:36.43%;
+  top:21.79%;
+  width:27.14%;
+  height:11.79%;
+}
+.outer .down{
+  left:36.43%;
+  top:66.43%;
+  width:27.14%;
+  height:11.79%;
+}
+.outer .left{
+  left:21.79%;
+  top:36.43%;
+  width:11.79%;
+  height:27.14%;
+}
+.outer .right{
+  left:66.43%;
+  top:36.43%;
+  width:11.79%;
+  height:27.14%;
+}
+
+/* .inner -> anello esterno R 80..133 (in HTML: frecce tastiera) */
+.inner .up{
+  left:32.14%;
+  top:2.5%;
+  width:35.71%;
+  height:18.93%;
+}
+.inner .down{
+  left:32.14%;
+  top:78.57%;
+  width:35.71%;
+  height:18.93%;
+}
+.inner .left{
+  left:2.5%;
+  top:32.14%;
+  width:18.93%;
+  height:35.71%;
+}
+.inner .right{
+  left:78.57%;
+  top:32.14%;
+  width:18.93%;
+  height:35.71%;
+}
+
+/* ::before invisibile: area sensibile R 80..140, senza spostare l'icona */
+.inner .up::before{
+  content:"";
+  position:absolute;
+  left:-30%;
+  right:-30%;
+  top:-13.21%;
+  bottom:0%;
+}
+.inner .down::before{
+  content:"";
+  position:absolute;
+  left:-30%;
+  right:-30%;
+  top:0%;
+  bottom:-13.21%;
+}
+.inner .left::before{
+  content:"";
+  position:absolute;
+  left:-13.21%;
+  right:0%;
+  top:-30%;
+  bottom:-30%;
+}
+.inner .right::before{
+  content:"";
+  position:absolute;
+  left:0%;
+  right:-13.21%;
+  top:-30%;
+  bottom:-30%;
+}
+/* fine wheel hit zones */
+
+.inner .pad{
+  color:var(--dim);
+}
+.inner .ic{
+  width:26px;
+  height:26px;
+  opacity:1;
+}
+
+.center{
+  position:absolute;
+  left:50%;
+  top:50%;
+  z-index:4;
+  /* quadrato 2x38 unita' = 27.14%: non tocca l'anello interno che parte da 46 */
+  width:27.14%;
+  height:27.14%;
+  transform:translate(-50%,-50%);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:0;
+  border:0;
+  border-radius:50%;
+  background:var(--bright);
+  color:var(--on-bright);
+  box-shadow:inset 0 0 0 1px var(--green),var(--glow);
+  cursor:pointer;
+  touch-action:none;
+}
+
+.center .ic{
+  width:24px;
+  height:24px;
+  opacity:1;
+}
+
+.center:active,
+.center.kmr-pressed{
+  transform:translate(-50%,-50%) scale(.94);
+}
+
+/* ── griglia comandi rapidi ────────────────────────────── */
+
+.media{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+}
+
+.media button{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:2px;
+  /* -3% di spessore, come i tasti in alto */
+  min-height:calc(48px * .97);
+  padding:6px 2px;
+  border:0;
+  border-radius:8px;
+  background:var(--card);
+  color:var(--green);
+  box-shadow:inset 0 0 0 1px var(--stroke);
+  font:inherit;
+  cursor:pointer;
+  touch-action:none;
+}
+
+.media button .glyph{
+  font-size:14px;
+  line-height:1.1;
+  font-weight:400;
+}
+
+.media button .lbl{
+  font-size:8px;
+  font-weight:700;
+  letter-spacing:.5px;
+  text-transform:uppercase;
+  line-height:1.15;
+  text-align:center;
+  color:var(--dim);
+}
+
+.media button:active,
+.media button.kmr-pressed{
+  transform:scale(.95);
+}
+
+.media button.accent{
+  background:var(--bright);
+  color:var(--on-bright);
+  box-shadow:0 0 8px rgba(51,255,102,.27);
+}
+
+.media button.accent .glyph{
+  font-size:13px;
+}
+
+.media button.accent .lbl{
+  color:var(--on-bright);
+}
+
+/* ── scorciatoie / bindings ────────────────────────────── */
+
+.bindings{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+}
+
+.binding-btn{
+  position:relative;
+  overflow:hidden;
+  /* larghezza invariata, altezza ridotta del 3% (1 / .97) */
+  aspect-ratio:1 / .97;
+  min-height:0;
+  padding:8px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:0;
+  border-radius:8px;
+  color:var(--dim);
+  font:inherit;
+  cursor:pointer;
+  /* sovrascrive il background impostato inline da loadBindings() */
+  background:var(--card-deep) !important;
+  box-shadow:inset 0 0 0 1px var(--stroke-soft);
+}
+
+.binding-btn:active,
+.binding-btn.kmr-pressed{
+  transform:scale(.96);
+}
+
+.binding-btn img{
+  width:72%;
+  height:72%;
+  object-fit:contain;
+  display:block;
+}
+
+.binding-btn .fallback-name{
+  line-height:1.1;
+  font-size:10px;
+  font-weight:700;
+  text-align:center;
+  word-break:break-word;
+  color:var(--dim);
+}
+
+/* ── pannello comandi shell ────────────────────────────── */
+
+#commandsPanel{
+  display:none;
+  margin-top:12px;
+  padding:12px;
+  border-radius:10px;
+  background:var(--card);
+  box-shadow:
+    inset 0 0 0 1px var(--stroke),
+    0 6px 18px rgba(0,0,0,.4);
+}
+
+.command{
+  display:block;
+  width:100%;
+  margin:6px 0;
+  padding:10px 12px;
+  border:0;
+  border-radius:6px;
+  background:transparent;
+  color:var(--dim);
+  box-shadow:inset 0 0 0 1px var(--stroke);
+  font:inherit;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.5px;
+  text-transform:uppercase;
+  text-align:left;
+  cursor:pointer;
+}
+
+.command:active,
+.command.kmr-pressed{
+  background:#122016;
+}
+
+.pc-link{
+  display:block;
+  margin-top:10px;
+  padding:10px 12px;
+  border-radius:6px;
+  color:var(--green);
+  box-shadow:inset 0 0 0 1px var(--stroke);
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:.5px;
+  text-align:center;
+  text-decoration:none;
+  text-transform:uppercase;
+}
+
+.pc-link:active{
+  background:#122016;
+}
+
+/* ── feedback aptico ───────────────────────────────────── */
+
+.haptic-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin:0 0 10px;
+  padding-bottom:10px;
+  border-bottom:1px solid var(--stroke-soft);
+}
+
+.haptic-row .sec{
+  margin:0;
+}
+
+#hapticBtn{
+  min-width:74px;
+  padding:8px 12px;
+  border:0;
+  border-radius:6px;
+  background:transparent;
+  color:var(--dim);
+  box-shadow:inset 0 0 0 1px var(--stroke);
+  font:inherit;
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:.5px;
+  text-transform:uppercase;
+  cursor:pointer;
+}
+
+#hapticBtn[aria-pressed="true"]{
+  background:var(--bright);
+  color:var(--on-bright);
+  box-shadow:0 0 8px rgba(51,255,102,.27);
+}
+
+form{
+  display:grid;
+  gap:8px;
+  margin-top:10px;
+}
+
+input{
+  padding:11px 12px;
+  border-radius:8px;
+  border:1px solid var(--stroke);
+  background:var(--card-deep);
+  color:var(--green);
+  font:inherit;
+  font-size:12px;
+}
+
+input::placeholder{
+  color:var(--hint);
+  text-transform:none;
+}
+
+form button{
+  padding:11px 12px;
+  border:0;
+  border-radius:8px;
+  background:var(--bright);
+  color:var(--on-bright);
+  font:inherit;
+  font-weight:700;
+  letter-spacing:.5px;
+  text-transform:uppercase;
+  cursor:pointer;
+}
+
+.small{
+  font-size:12px;
+}
+</style>
+<link rel="stylesheet" href="/static/haptic.css?v=1">
+</head>
+
+<body>
+
+<svg class="sprite" aria-hidden="true" focusable="false">
+  <symbol id="i-power" viewBox="0 0 24 24">
+    <path d="M12 2v10"/>
+    <path d="M18.4 6.6a9 9 0 1 1-12.8 0"/>
+  </symbol>
+
+  <symbol id="i-keyboard" viewBox="0 0 24 24">
+    <rect width="20" height="16" x="2" y="4" rx="2"/>
+    <path d="M6 8h.01"/>
+    <path d="M10 8h.01"/>
+    <path d="M14 8h.01"/>
+    <path d="M18 8h.01"/>
+    <path d="M8 12h.01"/>
+    <path d="M12 12h.01"/>
+    <path d="M16 12h.01"/>
+    <path d="M7 16h10"/>
+  </symbol>
+
+  <symbol id="i-menu" viewBox="0 0 24 24">
+    <line x1="4" x2="20" y1="6" y2="6"/>
+    <line x1="4" x2="20" y1="12" y2="12"/>
+    <line x1="4" x2="20" y1="18" y2="18"/>
+  </symbol>
+
+  <symbol id="i-chevron-up" viewBox="0 0 24 24">
+    <path d="m18 15-6-6-6 6"/>
+  </symbol>
+  <symbol id="i-chevron-down" viewBox="0 0 24 24">
+    <path d="m6 9 6 6 6-6"/>
+  </symbol>
+  <symbol id="i-chevron-left" viewBox="0 0 24 24">
+    <path d="m15 18-6-6 6-6"/>
+  </symbol>
+  <symbol id="i-chevron-right" viewBox="0 0 24 24">
+    <path d="m9 18 6-6-6-6"/>
+  </symbol>
+
+  <symbol id="i-arrow-up" viewBox="0 0 24 24">
+    <path d="m5 12 7-7 7 7"/>
+    <path d="M12 19V5"/>
+  </symbol>
+  <symbol id="i-arrow-down" viewBox="0 0 24 24">
+    <path d="M12 5v14"/>
+    <path d="m19 12-7 7-7-7"/>
+  </symbol>
+  <symbol id="i-arrow-left" viewBox="0 0 24 24">
+    <path d="M12 19l-7-7 7-7"/>
+    <path d="M19 12H5"/>
+  </symbol>
+  <symbol id="i-arrow-right" viewBox="0 0 24 24">
+    <path d="M5 12h14"/>
+    <path d="m12 5 7 7-7 7"/>
+  </symbol>
+
+  <symbol id="i-mouse-pointer" viewBox="0 0 24 24">
+    <path d="M4 4l7.07 17 2.51-7.39L21 11.07z"/>
+  </symbol>
+
+  <symbol id="i-mouse-pointer-click" viewBox="0 0 24 24">
+    <path d="M9 9l5 12 1.8-5.2L21 14z"/>
+    <path d="M7.2 2.2l.8 2.2"/>
+    <path d="M5.1 7.4l-1.9-.7"/>
+    <path d="M6 12l-2 .1"/>
+    <path d="m4.4 16.9-1.6 1.6"/>
+    <path d="m2.3 21.5 1.6-1.6"/>
+  </symbol>
+
+  <symbol id="i-volume-2" viewBox="0 0 24 24">
+    <path d="M11 4.7 7 9H3v6h4l4 4.3z"/>
+    <path d="M15.5 8.5a5 5 0 0 1 0 7"/>
+    <path d="M18.5 5.5a9 9 0 0 1 0 13"/>
+  </symbol>
+  <symbol id="i-volume-1" viewBox="0 0 24 24">
+    <path d="M11 4.7 7 9H3v6h4l4 4.3z"/>
+    <path d="M15.5 8.5a5 5 0 0 1 0 7"/>
+  </symbol>
+  <symbol id="i-volume-x" viewBox="0 0 24 24">
+    <path d="M11 4.7 7 9H3v6h4l4 4.3z"/>
+    <path d="m22 9-6 6"/>
+    <path d="m16 9 6 6"/>
+  </symbol>
+
+  <symbol id="i-play" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="10"/>
+    <path d="m10 8 6 4-6 4z"/>
+  </symbol>
+
+  <symbol id="i-skip-fwd" viewBox="0 0 24 24">
+    <path d="m5 4 10 8-10 8z"/>
+    <path d="M19 5v14"/>
+  </symbol>
+  <symbol id="i-skip-back" viewBox="0 0 24 24">
+    <path d="m19 20-10-8 10-8z"/>
+    <path d="M5 19V5"/>
+  </symbol>
+
+  <symbol id="i-maximize" viewBox="0 0 24 24">
+    <path d="M8 3H5a2 2 0 0 0-2 2v3"/>
+    <path d="M21 8V5a2 2 0 0 0-2-2h-3"/>
+    <path d="M3 16v3a2 2 0 0 0 2 2h3"/>
+    <path d="M16 21h3a2 2 0 0 0 2-2v-3"/>
+  </symbol>
+
+  <symbol id="i-corner-down-left" viewBox="0 0 24 24">
+    <path d="m9 10-5 5 5 5"/>
+    <path d="M20 4v7a4 4 0 0 1-4 4H4"/>
+  </symbol>
+
+  <symbol id="i-chevrons-up" viewBox="0 0 24 24">
+    <path d="m17 11-5-5-5 5"/>
+    <path d="m17 18-5-5-5 5"/>
+  </symbol>
+  <symbol id="i-chevrons-down" viewBox="0 0 24 24">
+    <path d="m7 6 5 5 5-5"/>
+    <path d="m7 13 5 5 5-5"/>
+  </symbol>
+
+  <symbol id="i-home" viewBox="0 0 24 24">
+    <path d="m3 10 9-7 9 7"/>
+    <path d="M5 9v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9"/>
+    <path d="M9 21v-6h6v6"/>
+  </symbol>
+</svg>
+
+<main class="remote">
+
+  <header class="lcd">
+    <div>
+      <h1>KDE Remote</h1>
+      <p class="sub"><span>PebbleTV</span><i aria-hidden="true">&bull;</i><span>Plasma Bigscreen</span></p>
+    </div>
+    <div class="pill" id="connPill" data-state="connecting">
+      <span class="dot"></span>
+      <span id="connTxt">Connessione&hellip;</span>
+    </div>
+  </header>
+
+  <section class="top">
+    <button type="button" class="ctl ctl-primary" data-key="power">
+      <svg class="ic"><use href="#i-power"/></svg>
+      <span class="lbl">Accensione</span>
+    </button>
+
+    <a class="ctl" href="/keyboard">
+      <svg class="ic"><use href="#i-keyboard"/></svg>
+      <span class="lbl">Tastiera</span>
+    </a>
+
+    <button type="button" class="ctl" id="commandsBtn">
+      <svg class="ic"><use href="#i-menu"/></svg>
+      <span class="lbl">Menu</span>
+    </button>
+  </section>
+
+  <p class="sec">&gt; NAVIGAZIONE_TV &#9646;</p>
+
+  <section class="dpad">
+    <img class="wheel-art" src="/static/wheel.svg?v=2" alt="" aria-hidden="true" draggable="false">
+
+    <div class="outer">
+      <button type="button" class="pad mouse up" data-dir="up" data-no-haptic>
+        <svg class="ic"><use href="#i-arrow-up"/></svg>
+      </button>
+      <button type="button" class="pad mouse right" data-dir="right" data-no-haptic>
+        <svg class="ic"><use href="#i-arrow-right"/></svg>
+      </button>
+      <button type="button" class="pad mouse down" data-dir="down" data-no-haptic>
+        <svg class="ic"><use href="#i-arrow-down"/></svg>
+      </button>
+      <button type="button" class="pad mouse left" data-dir="left" data-no-haptic>
+        <svg class="ic"><use href="#i-arrow-left"/></svg>
+      </button>
+    </div>
+
+    <div class="inner">
+      <button type="button" class="pad up" data-key="up">
+        <svg class="ic"><use href="#i-chevron-up"/></svg>
+      </button>
+      <button type="button" class="pad down" data-key="down">
+        <svg class="ic"><use href="#i-chevron-down"/></svg>
+      </button>
+      <button type="button" class="pad left" data-key="left">
+        <svg class="ic"><use href="#i-chevron-left"/></svg>
+      </button>
+      <button type="button" class="pad right" data-key="right">
+        <svg class="ic"><use href="#i-chevron-right"/></svg>
+      </button>
+    </div>
+
+    <button type="button" class="center" data-key="enter">
+      <svg class="ic"><use href="#i-corner-down-left"/></svg>
+    </button>
+  </section>
+
+  <p class="sec">&gt; COMANDI_RAPIDI &#9646;</p>
+
+  <section class="media">
+    <button type="button" data-key="volume_up">
+      <span class="glyph">+</span>
+      <span class="lbl">VOL+</span>
+    </button>
+    <button type="button" class="accent" data-key="play_pause">
+      <span class="glyph">&#9654;</span>
+      <span class="lbl">PLAY</span>
+    </button>
+    <button type="button" data-key="esc">
+      <span class="glyph">&#9099;</span>
+      <span class="lbl">ESC</span>
+    </button>
+    <button type="button" id="rightClick">
+      <span class="glyph">&#9704;</span>
+      <span class="lbl">CLICK DX</span>
+    </button>
+
+    <button type="button" data-key="volume_down">
+      <span class="glyph">&minus;</span>
+      <span class="lbl">VOL&minus;</span>
+    </button>
+    <button type="button" data-key="home">
+      <span class="glyph">&#8962;</span>
+      <span class="lbl">HOME</span>
+    </button>
+    <button type="button" id="switcherBtn" aria-label="Selettore finestre (Alt+Tab)">
+      <span class="glyph">&#10697;</span>
+      <span class="lbl">ALT+TAB</span>
+    </button>
+    <button type="button" id="leftClick">
+      <span class="glyph">&#9705;</span>
+      <span class="lbl">CLICK SX</span>
+    </button>
+
+    <button type="button" data-key="mute">
+      <span class="glyph">&#10005;</span>
+      <span class="lbl">MUTE</span>
+    </button>
+    <button type="button" data-key="previous">
+      <span class="glyph">&laquo;</span>
+      <span class="lbl">PREV</span>
+    </button>
+    <button type="button" data-key="next">
+      <span class="glyph">&raquo;</span>
+      <span class="lbl">NEXT</span>
+    </button>
+    <button type="button" data-key="close_window">
+      <span class="glyph">&#10006;</span>
+      <span class="lbl">CHIUDI</span>
+    </button>
+  </section>
+
+  <p class="sec">&gt; SCORCIATOIE &#9646;</p>
+
+  <section class="bindings" id="bindings"></section>
+
+  <section id="commandsPanel">
+    <div class="haptic-row" id="hapticRow">
+      <p class="sec">&gt; FEEDBACK_APTICO &#9646;</p>
+      <button type="button" id="hapticBtn" aria-pressed="true">ON</button>
+    </div>
+    <div id="commands"></div>
+    <form id="addCommand">
+      <input name="name" placeholder="Nome comando">
+      <input name="command" placeholder="Comando shell">
+      <button type="submit" class="small">+ Aggiungi comando</button>
+    </form>
+    <a class="pc-link" href="/pc?ui=pc">Modalità PC &rarr;</a>
+  </section>
+
+</main>
+
+<script src="/static/haptic.js?v=2"></script>
+<script src="/static/connection.js"></script>
+<script>
+/* Se haptic.js non fosse raggiungibile (deploy parziale), il telecomando
+ * deve continuare a funzionare: nessun overlay, nessun feedback. */
+window.KMRHaptic = window.KMRHaptic || {
+  available: false,
+  attach: () => false,
+  attachAll: () => {},
+  fromSwitch: () => false,
+  setEnabled: value => !!value,
+  isEnabled: () => false
+};
+
+let setConnectionStatus = () => {};
+
+const conn = KMRConnection.create({
+  onStatus: state => setConnectionStatus(state)
+});
+
+const send = payload => conn.send(payload);
+
+
+/* 1. GESTIONE TASTI STANDARD (Volume, Mute, Enter, Esc, D-Pad esteriore)
+      Le 4 frecce del D-pad tenute premute ripetono la pressione sul
+      server, con velocita' che cresce gradualmente finche' restano
+      premute: un tocco breve resta una singola pressione. */
+const HOLDABLE_KEYS = new Set(["up", "down", "left", "right"]);
+
+document.querySelectorAll("[data-key]").forEach(btn => {
+  const holdable =
+    btn.classList.contains("pad") &&
+    HOLDABLE_KEYS.has(btn.dataset.key);
+
+  KMRHaptic.attach(btn);
+
+  if (!holdable) {
+    btn.addEventListener("pointerdown", e => {
+      // il tap sull'overlay nativo non va annullato: e' quello che fa
+      // suonare il tick di sistema
+      if (!KMRHaptic.fromSwitch(e)) e.preventDefault();
+      send({ action: "key", key: btn.dataset.key });
+    });
+    return;
+  }
+
+  const stop = e => {
+    if (e && !KMRHaptic.fromSwitch(e)) e.preventDefault();
+    send({ action: "key_stop", key: btn.dataset.key });
+    try { btn.releasePointerCapture(e.pointerId); } catch(err) {}
+  };
+
+  btn.addEventListener("pointerdown", e => {
+    if (!KMRHaptic.fromSwitch(e)) {
+      e.preventDefault();
+      /* Sul touch il pointer e' gia' catturato dal target: catturarlo
+       * anche sul pulsante romperebbe il toggle dello switch nativo. */
+      try { btn.setPointerCapture(e.pointerId); } catch(err) {}
+    }
+    send({ action: "key_start", key: btn.dataset.key });
+  });
+
+  btn.addEventListener("pointerup", stop);
+  btn.addEventListener("pointercancel", stop);
+  btn.addEventListener("lostpointercapture", stop);
+});
+
+
+/* 2. GESTIONE SCROLL CONTINUO SENZA ACCELERAZIONE */
+document.querySelectorAll("[data-action]").forEach(btn => {
+  let timer = null;
+
+  KMRHaptic.attach(btn);
+
+  const stop = (e) => {
+    if (e && !KMRHaptic.fromSwitch(e)) e.preventDefault();
+    if (timer !== null) {
+      clearInterval(timer);
+      timer = null;
+    }
+    try { btn.releasePointerCapture(e.pointerId); } catch(err) {}
+  };
+
+  btn.addEventListener("pointerdown", e => {
+    if (!KMRHaptic.fromSwitch(e)) {
+      e.preventDefault();
+      try { btn.setPointerCapture(e.pointerId); } catch(err) {}
+    }
+
+    // Invia il primo impulso immediatamente
+    send({ action: btn.dataset.action });
+
+    // Ripete lo scroll a frequenza fissa (senza accelerazione)
+    if (timer === null) {
+      timer = setInterval(() => {
+        send({ action: btn.dataset.action });
+      }, 100);
+    }
+  });
+
+  btn.addEventListener("pointerup", stop);
+  btn.addEventListener("pointercancel", stop);
+  btn.addEventListener("lostpointercapture", stop);
+});
+
+
+/* 3. GESTIONE CLICK E MOVIMENTO MOUSE */
+const leftClick = document.getElementById("leftClick");
+const rightClick = document.getElementById("rightClick");
+
+KMRHaptic.attach(leftClick);
+KMRHaptic.attach(rightClick);
+
+leftClick.onpointerdown = e => {
+  if (!KMRHaptic.fromSwitch(e)) e.preventDefault();
+  send({ action: "mouse_click" });
+};
+
+rightClick.onpointerdown = e => {
+  if (!KMRHaptic.fromSwitch(e)) e.preventDefault();
+  send({ action: "right_click" });
+};
+
+
+/* 3b. MACRO SELETTORE FINESTRE (Alt+Tab)
+   Il server preme Alt+Tab e tiene Alt giu': cosi' il menu delle app
+   aperte resta visibile e si naviga con le frecce del D-pad. Invio
+   conferma, Esc annulla; in entrambi i casi il server rilascia Alt. */
+const switcherBtn = document.getElementById("switcherBtn");
+
+KMRHaptic.attach(switcherBtn);
+
+switcherBtn.onpointerdown = e => {
+  if (!KMRHaptic.fromSwitch(e)) e.preventDefault();
+  send({ action: "switcher" });
+};
+
+document.querySelectorAll(".mouse").forEach(btn => {
+  KMRHaptic.attach(btn);
+
+  const stop = e => {
+    if (!KMRHaptic.fromSwitch(e)) e.preventDefault();
+    send({ action: "mouse_stop", direction: btn.dataset.dir });
+    try { btn.releasePointerCapture(e.pointerId); } catch(err) {}
+  };
+
+  btn.addEventListener("pointerdown", e => {
+    if (!KMRHaptic.fromSwitch(e)) {
+      e.preventDefault();
+      try { btn.setPointerCapture(e.pointerId); } catch(err) {}
+    }
+    send({ action: "mouse_start", direction: btn.dataset.dir });
+  });
+
+  btn.addEventListener("pointerup", stop);
+  btn.addEventListener("pointercancel", stop);
+  btn.addEventListener("lostpointercapture", () =>
+    send({ action: "mouse_stop", direction: btn.dataset.dir })
+  );
+});
+
+
+/* 4. CARICAMENTO BINDINGS E COMANDI */
+async function loadBindings(){
+  try {
+    const data = await fetch("/api/bindings").then(r => r.json());
+    const box = document.getElementById("bindings");
+    box.innerHTML = "";
+
+    data.sort((a,b) => a.slot - b.slot).forEach(b => {
+      const btn = document.createElement("button");
+      btn.className = "binding-btn";
+      btn.title = b.desktop_info?.name || b.name || `Binding ${b.slot}`;
+
+      const useFallback = () => {
+        btn.innerHTML = "";
+        btn.style.background = b.color || "#333";
+        const label = document.createElement("span");
+        label.className = "fallback-name";
+        label.textContent = b.name || b.desktop_info?.name || `#${b.slot}`;
+        btn.appendChild(label);
+      };
+
+      if(b.has_icon && b.icon_url){
+        btn.style.background = "#202020";
+        const img = document.createElement("img");
+        img.src = `${b.icon_url}?v=${Date.now()}`;
+        img.alt = b.desktop_info?.name || b.name || "";
+        img.onerror = useFallback;
+        btn.appendChild(img);
+      } else {
+        useFallback();
+      }
+
+      btn.onclick = () => fetch(`/api/binding/${b.slot}`, { method: "POST" });
+      box.appendChild(btn);
+      KMRHaptic.attach(btn);
+    });
+  } catch(e) {}
+}
+
+async function loadCommands(){
+  try {
+    const data = await fetch("/api/commands").then(r => r.json());
+    const box = document.getElementById("commands");
+    box.innerHTML = "";
+    data.forEach((c, i) => {
+      const btn = document.createElement("button");
+      btn.className = "command small";
+      btn.textContent = c.name;
+      btn.onclick = () => fetch(`/api/command/${i}`, { method: "POST" });
+      box.appendChild(btn);
+      KMRHaptic.attach(btn);
+    });
+  } catch(e) {}
+}
+
+const commandsBtn = document.getElementById("commandsBtn");
+KMRHaptic.attach(commandsBtn);
+
+commandsBtn.onclick = () => {
+  const p = document.getElementById("commandsPanel");
+  const aperto = p.style.display === "block";
+  p.style.display = aperto ? "none" : "block";
+  // i comandi possono cambiare in config/commands.toml mentre la pagina
+  // resta aperta: rileggili ogni volta che il menu' viene aperto, cosi'
+  // non restano bottoni vecchi (nomi e ordine) sul telefono
+  if (!aperto) {
+    loadCommands();
+    loadBindings();
+  }
+};
+
+/* 6. FEEDBACK APTICO: un tick a ogni pressione (solo iOS, vedi haptic.js) */
+
+const hapticBtn = document.getElementById("hapticBtn");
+const hapticRow = document.getElementById("hapticRow");
+
+KMRHaptic.attach(hapticBtn);
+
+function renderHapticBtn(){
+  const on = KMRHaptic.isEnabled();
+  hapticBtn.textContent = on ? "ON" : "OFF";
+  hapticBtn.setAttribute("aria-pressed", on ? "true" : "false");
+  // su desktop/Android non c'e' il tick di sistema iOS: meglio non
+  // mostrare un interruttore che non farebbe nulla
+  if (!KMRHaptic.available) hapticRow.style.display = "none";
+}
+
+hapticBtn.onclick = () => {
+  const on = KMRHaptic.setEnabled(!KMRHaptic.isEnabled());
+  hapticBtn.textContent = on ? "ON" : "OFF";
+  hapticBtn.setAttribute("aria-pressed", on ? "true" : "false");
+};
+
+renderHapticBtn();
+
+
+document.getElementById("addCommand").onsubmit = async e => {
+  e.preventDefault();
+  const f = new FormData(e.target);
+  await fetch("/api/commands", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name: f.get("name"), command: f.get("command") })
+  });
+  e.target.reset();
+  loadCommands();
+};
+
+loadBindings();
+loadCommands();
+
+
+/* 5. BADGE STATO CONNESSIONE (header)
+   Lo stato arriva dal modulo di connessione: online / connecting /
+   offline. La riconnessione e il ping sono gestiti in connection.js. */
+
+const connPill = document.getElementById("connPill");
+const connTxt = document.getElementById("connTxt");
+
+const CONN_LABEL = {
+  online: "Connesso",
+  connecting: "Connessione…",
+  offline: "Non connesso",
+  stale: "Server bloccato"
+};
+
+setConnectionStatus = state => {
+  if(connPill.dataset.state === state) return;
+  connPill.dataset.state = state;
+  connTxt.textContent = CONN_LABEL[state] || CONN_LABEL.offline;
+};
+
+conn.start();
+</script></body>
+</html>
