@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-140 -140 280 280" width="280" height="280" role="img" aria-label="Click wheel">
+  <defs>
+    <radialGradient id="body" cx="50%" cy="42%" r="62%">
+      <stop offset="0" stop-color="#fbf8f0"/>
+      <stop offset=".34" stop-color="#f8f5ea"/>
+      <stop offset=".62" stop-color="#f0eee5"/>
+      <stop offset=".84" stop-color="#dfe1de"/>
+      <stop offset="1" stop-color="#d3d6d5"/>
+    </radialGradient>
+    <radialGradient id="ringIn" gradientUnits="userSpaceOnUse"
+                    cx="0" cy="0" r="76">
+      <stop offset=".6" stop-color="#fffef8"/>
+      <stop offset=".82" stop-color="#fbfaf3"/>
+      <stop offset="1" stop-color="#f2f0e6"/>
+    </radialGradient>
+    <linearGradient id="ringOut" gradientUnits="userSpaceOnUse"
+                    x1="0" y1="-133" x2="0" y2="133">
+      <stop offset="0" stop-color="#fbfaf6"/>
+      <stop offset=".22" stop-color="#f1f2ef"/>
+      <stop offset=".5" stop-color="#e6e8e7"/>
+      <stop offset=".78" stop-color="#dadcdb"/>
+      <stop offset="1" stop-color="#ccd0cf"/>
+    </linearGradient>
+    <radialGradient id="btn" gradientUnits="userSpaceOnUse" cx="0" cy="-11" r="54">
+      <stop offset="0" stop-color="#3d8cc8"/>
+      <stop offset=".28" stop-color="#2f83c3"/>
+      <stop offset=".55" stop-color="#287fc2"/>
+      <stop offset="1" stop-color="#2577b9"/>
+    </radialGradient>
+    <radialGradient id="gloss" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#b0daf1" stop-opacity=".85"/>
+      <stop offset=".5" stop-color="#5ba3d3" stop-opacity=".5"/>
+      <stop offset="1" stop-color="#3f8dc8" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="btnShadow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="1" stdDeviation="1.4"
+                    flood-color="#122424" flood-opacity=".14"/>
+    </filter>
+  </defs>
+
+  <circle cx="0" cy="0" r="135.5" fill="#122424" opacity=".10"/>
+  <circle cx="0" cy="0" r="134" fill="url(#body)"/>
+  <g fill="url(#ringOut)">
+    <path d="M128.47 -34.42A133 133 0 0 1 128.47 34.42L77.27 20.71A80 80 0 0 0 77.27 -20.71Z"/>
+    <path d="M34.42 128.47A133 133 0 0 1 -34.42 128.47L-20.71 77.27A80 80 0 0 0 20.71 77.27Z"/>
+    <path d="M-128.47 34.42A133 133 0 0 1 -128.47 -34.42L-77.27 -20.71A80 80 0 0 0 -77.27 20.71Z"/>
+    <path d="M-34.42 -128.47A133 133 0 0 1 34.42 -128.47L20.71 -77.27A80 80 0 0 0 -20.71 -77.27Z"/>
+  </g>
+  <circle cx="0" cy="0" r="78.5" fill="none" stroke="#c9cccb" stroke-width="2.2" opacity=".9"/>
+  <circle cx="0" cy="0" r="80.1" fill="none" stroke="#ffffff" stroke-width="1" opacity=".55"/>
+  <g fill="url(#ringIn)">
+    <path d="M73.41 -19.67A76 76 0 0 1 73.41 19.67L44.43 11.91A46 46 0 0 0 44.43 -11.91Z"/>
+    <path d="M19.67 73.41A76 76 0 0 1 -19.67 73.41L-11.91 44.43A46 46 0 0 0 11.91 44.43Z"/>
+    <path d="M-73.41 19.67A76 76 0 0 1 -73.41 -19.67L-44.43 -11.91A46 46 0 0 0 -44.43 11.91Z"/>
+    <path d="M-19.67 -73.41A76 76 0 0 1 19.67 -73.41L11.91 -44.43A46 46 0 0 0 -11.91 -44.43Z"/>
+  </g>
+  <path d="M-46.8 -0A46.8 46.8 0 0 1 46.8 0L45.2 0A45.2 45.2 0 0 0 -45.2 -0Z" fill="none" stroke="#ffffff" stroke-width="1.6" opacity=".7"/>
+  <circle cx="0" cy="0" r="38" fill="url(#btn)" filter="url(#btnShadow)"/>
+  <ellipse cx="0" cy="-4" rx="11" ry="6" fill="url(#gloss)"/>
+  <circle cx="0" cy="0" r="37.4" fill="none" stroke="#ffffff" stroke-width="1" opacity=".18"/>
+</svg>
