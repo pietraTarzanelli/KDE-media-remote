@@ -1,0 +1,12 @@
+# stato di autenticazione: hash dei PIN e sessioni, da non versionare
+data/
+
+# venv
+.venv/
+
+# configurazione locale con indirizzi reali (non versionare)
+config/auth.local.toml
+
+# python
+__pycache__/
+*.py[cod]
