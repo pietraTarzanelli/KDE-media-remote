@@ -3,10 +3,10 @@
 Prima stesura focalizzata su CachyOS + KDE Plasma + Wayland.
 
 <p align="center">
-  <img src="photo/homekde.jpg" alt="Home KDE Media Remote" width="48%" />
-  <img src="photo/keyboardkde.jpg" alt="Keyboard KDE Media Remote" width="48%" />
+  <img src="photo/homekde.jpg?v=20261118" alt="Home KDE Media Remote" width="48%" />
+  <img src="photo/keyboardkde.jpg?v=20261118" alt="Keyboard KDE Media Remote" width="48%" />
   <br />
-  <img src="photo/pckde.jpg" alt="PC KDE Media Remote" width="100%" />
+  <img src="photo/pckde.jpg?v=20261118" alt="PC KDE Media Remote" width="100%" />
 </p>
 
 ## Architettura
