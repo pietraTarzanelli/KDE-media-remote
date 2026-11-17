@@ -1,0 +1,52 @@
+[server]
+port = 8765
+
+# Dove mettere in ascolto il server. Sono piu' socket aperti sulla
+# stessa porta, non una sola host: ogni voce vale per indirizzo.
+#
+#   "loopback"  -> 127.0.0.1 e ::1, cioe' questo portatile
+#   "tailscale" -> l'interfaccia tailscale0, cioe' il telefono
+#   "0.0.0.0"   -> tutta la LAN: sconsigliato, vedi run.py
+#
+# Con la lista qui sotto la rete locale non ha niente su cui
+# collegarsi, ma il telefono arriva come sempre in HTTP sulla 8765.
+bind = ["loopback", "tailscale"]
+
+[input]
+backend = "ydotool"
+mouse_step = 22
+mouse_repeat_ms = 70
+mouse_accel_after_ms = 500
+mouse_accel_multiplier = 2.2
+
+# Frecce del D-pad tenute premute: dopo il primo tocco la ripetizione
+# aspetta key_hold_delay_ms ("tenuto premuto" davvero), poi parte a
+# key_repeat_ms e, dopo key_accel_after_ms di ripetizione continua, si
+# riduce gradualmente (x key_accel_factor per ciclo) fino a
+# key_min_repeat_ms. Il ritardo iniziale evita che un appoggio breve
+# del dito faccia scorrere due elementi, il tetto minimo evita che la
+# velocita' sfugga di mano durante lo seek di un video.
+key_hold_delay_ms = 200
+key_repeat_ms = 120
+key_min_repeat_ms = 70
+key_accel_after_ms = 600
+key_accel_factor = 0.85
+
+[desktop]
+# Modalita' PC (pagina /pc): il cursore che resta dentro l'area di
+# destra muove il mouse del PC remoto. La sensibilita' moltiplica i
+# pixel locali, scroll_px_per_notch e' quanti pixel di rotella valgono
+# un "clic" di scroll sul PC remoto.
+mouse_sensitivity = 1.0
+scroll_px_per_notch = 100
+brightness_step = 15
+
+# Cartella degli screenshot. Vuota = ~/Pictures/Screenshots.
+screenshot_dir = ""
+
+[security]
+# Tutte le rotte (tranne login e asset statici) richiedono una sessione
+# valida. allow_web_config_edit riguarda solo POST /api/commands, che
+# aggiunge un comando a config/commands.toml: tienilo false se il
+# telecomando non deve poter scrivere comandi.
+allow_web_config_edit = true

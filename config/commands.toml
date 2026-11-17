@@ -1,0 +1,59 @@
+# Comandi programmabili del telecomando.
+#
+# Ogni voce diventa un pulsante nel pannello "Menu" della web UI:
+#
+# [[commands]]
+# name = "Nome mostrato"
+# command = "comando shell"
+
+[[commands]]
+name = "🔆🔆🔆"
+command = '''
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+if [ -z "${WAYLAND_DISPLAY:-}" ]; then
+    for sock in "${XDG_RUNTIME_DIR}"/wayland-*; do
+        case "$sock" in
+            *.lock) continue ;;
+        esac
+        [ -S "$sock" ] || continue
+        WAYLAND_DISPLAY="${sock##*/}"
+        export WAYLAND_DISPLAY
+        break
+    done
+fi
+export QT_QPA_PLATFORM=wayland
+info=$(kscreen-doctor -o 2>/dev/null | sed -e 's/\x1b\[[0-9;]*m//g' | awk '/^Output:/ {name=$3} /Brightness control: supported/ {if (match($0, /set to [0-9]+%/)) {print name, substr($0, RSTART+7, RLENGTH-8); exit}}')
+out="${info%% *}"
+cur="${info##* }"
+[ -n "$cur" ] || { echo "luminosita' non controllabile su questo schermo" >&2; exit 1; }
+n=$((cur+15))
+[ "$n" -lt 0 ] && n=0
+[ "$n" -gt 100 ] && n=100
+kscreen-doctor output."$out".brightness."$n"
+'''
+
+[[commands]]
+name = "🔅🔅🔅"
+command = '''
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+if [ -z "${WAYLAND_DISPLAY:-}" ]; then
+    for sock in "${XDG_RUNTIME_DIR}"/wayland-*; do
+        case "$sock" in
+            *.lock) continue ;;
+        esac
+        [ -S "$sock" ] || continue
+        WAYLAND_DISPLAY="${sock##*/}"
+        export WAYLAND_DISPLAY
+        break
+    done
+fi
+export QT_QPA_PLATFORM=wayland
+info=$(kscreen-doctor -o 2>/dev/null | sed -e 's/\x1b\[[0-9;]*m//g' | awk '/^Output:/ {name=$3} /Brightness control: supported/ {if (match($0, /set to [0-9]+%/)) {print name, substr($0, RSTART+7, RLENGTH-8); exit}}')
+out="${info%% *}"
+cur="${info##* }"
+[ -n "$cur" ] || { echo "luminosita' non controllabile su questo schermo" >&2; exit 1; }
+n=$((cur-15))
+[ "$n" -lt 0 ] && n=0
+[ "$n" -gt 100 ] && n=100
+kscreen-doctor output."$out".brightness."$n"
+'''

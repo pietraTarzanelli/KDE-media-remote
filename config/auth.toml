@@ -1,0 +1,41 @@
+# ── autenticazione ──
+# Gli account e i PIN NON stanno qui: vivono nel database data/auth.db,
+# gestiti con "python tools/accounts.py". Qui ci sono solo le scadenze.
+
+[auth]
+# false = disattiva completamente il login (solo per debug locale)
+enabled = true
+
+# massimo 7 PIN validi contemporaneamente
+max_accounts = 7
+
+# il login viene ricordato 4 mesi: scadenza assoluta dalla creazione
+# della sessione, non si ricarica nemmeno con l'uso continuo
+session_absolute_days = 120
+
+# timer separato: se l'account non viene usato per 20 giorni la
+# sessione muore e va rifatto il login
+session_idle_days = 20
+
+# tentativi di login sbagliati per IP nella finestra di 60 secondi
+login_max_attempts = 5
+login_lockout_seconds = 300
+
+# "auto" mette Secure sul cookie solo se la richiesta arriva davvero su
+# HTTPS. Con il bind diretto su tailscale0 sei in HTTP: il traffico e'
+# comunque cifrato dal tunnel WireGuard di Tailscale, non dal browser.
+cookie_secure = "auto"
+
+# Reverse proxy di cui fidarsi quando leggono X-Real-IP /
+# X-Forwarded-For, per decidere chi e' "locale" e per il rate limit del
+# login. Il server ascolta anche direttamente: fidarsi
+# dell'intestazione da chiunque permetterebbe a un device remoto di
+# spacciarsi per questa macchina, quindi vanno elencati solo gli
+# indirizzi del proxy.
+#
+# Qui c'e' Nginx Proxy Manager su "atlante" (tailnet). Il telefono passa
+# da NPM in HTTPS; l'HTTP diretto su tailscale resta come fallback e non
+# e' toccato da questa lista.
+# Gli indirizzi reali vanno in config/auth.local.toml, che NON e'
+# versionato: vedi la sezione "Proxy fidato" nel README.
+trusted_proxy_ips = []

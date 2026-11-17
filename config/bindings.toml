@@ -1,0 +1,36 @@
+[[bindings]]
+slot = 1
+type = "app"
+name = "VacuumTube"
+desktop = "rocks.shy.VacuumTube.desktop"
+icon = "/var/lib/flatpak/appstream/flathub/x86_64/413b0b7824cfee2af9a458205b1c6f9370a15ca3273592ec9284cd12468e5947/icons/128x128/rocks.shy.VacuumTube.png"
+color = "#6f4fb0"
+
+[[bindings]]
+slot = 2
+type = "command"
+name = "Jellyfin"
+command = "/usr/bin/flatpak run org.jellyfin.JellyfinDesktop"
+icon = "/var/lib/flatpak/exports/share/icons/hicolor/scalable/apps/org.jellyfin.JellyfinDesktop.svg"
+color = "#9467bd"
+
+# Slot 3 e 4 disattivati: Konsole e Firefox si aprivano per sbaglio
+# uscendo dal telecomando (tap accidentale sui pulsanti in basso a
+# destra durante il gesto di uscita). Per riattivarli basta togliere
+# il commento dai due blocchi qui sotto.
+
+# [[bindings]]
+# slot = 3
+# type = "app"
+# name = "Console"
+# desktop = "org.kde.konsole.desktop"
+# icon = ""
+# color = "#2c3e50"
+
+# [[bindings]]
+# slot = 4
+# type = "app"
+# name = "Firefox"
+# desktop = "firefox.desktop"
+# icon = ""
+# color = "#ff7139"
