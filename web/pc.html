@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#031008">
+  <title>KDE Remote — PC</title>
+  <script>
+  try {
+    localStorage.setItem("kmr.ui", "pc");
+  } catch (e) {}
+  </script>
+  <link rel="manifest" href="/static/manifest.webmanifest">
+  <link rel="icon" href="/static/icon-192.png" type="image/png">
+  <link rel="stylesheet" href="/static/pc.css">
+</head>
+<body>
+  <svg class="sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="i-volume-2" viewBox="0 0 24 24">
+      <path d="M4 9v6h4l5 4V5L8 9H4Z" fill="currentColor"/>
+      <path d="M16 8.5a5 5 0 0 1 0 7M18.7 6a9 9 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="i-volume-1" viewBox="0 0 24 24">
+      <path d="M4 9v6h4l5 4V5L8 9H4Z" fill="currentColor"/>
+      <path d="M16 8.5a5 5 0 0 1 0 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="i-volume-x" viewBox="0 0 24 24">
+      <path d="M4 9v6h4l5 4V5L8 9H4Z" fill="currentColor"/>
+      <path d="m16 9 5 5m0-5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="i-play" viewBox="0 0 24 24">
+      <path d="M8 5.5v13l10-6.5-10-6.5Z" fill="currentColor"/>
+    </symbol>
+    <symbol id="i-skip-back" viewBox="0 0 24 24">
+      <path d="M6 5h2v14H6V5Zm12 0-9 7 9 7V5Z" fill="currentColor"/>
+    </symbol>
+    <symbol id="i-skip-fwd" viewBox="0 0 24 24">
+      <path d="M16 5h2v14h-2V5ZM6 5l9 7-9 7V5Z" fill="currentColor"/>
+    </symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24">
+      <path d="M4 7h4l1.5-2h5L16 7h4v12H4V7Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+      <circle cx="12" cy="13" r="3.4" fill="none" stroke="currentColor" stroke-width="1.8"/>
+    </symbol>
+    <symbol id="i-close" viewBox="0 0 24 24">
+      <path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="i-monitor" viewBox="0 0 24 24">
+      <rect x="3" y="4" width="18" height="12" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/>
+      <path d="M9 20h6m-3-4v4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="i-home" viewBox="0 0 24 24">
+      <path d="m3 11 9-7 9 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M5.5 9.5V20h13V9.5M10 20v-6h4v6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="i-switcher" viewBox="0 0 24 24">
+      <rect x="3" y="5" width="13" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/>
+      <path d="M8 19h11a2 2 0 0 0 2-2V9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+      <path d="m16 12 4 3-4 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="i-unlock" viewBox="0 0 24 24">
+      <rect x="5" y="10" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/>
+      <path d="M8 10V7a4 4 0 0 1 7.4-2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24">
+      <rect x="7" y="2.5" width="10" height="19" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/>
+      <path d="M10.5 18.5h3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+    </symbol>
+  </svg>
+
+  <div class="app">
+    <aside class="sidebar">
+      <header class="brand">
+        <div>
+          <h1>KDE REMOTE</h1>
+          <p>PC MODE <span class="brand-sep">/</span> porta 8765</p>
+        </div>
+        <span class="pill" id="connPill" data-state="connecting">
+          <span class="dot"></span>
+          <span id="connTxt">Connessione…</span>
+        </span>
+      </header>
+
+      <section class="panel panel-bindings">
+        <div class="panel-head">
+          <span class="sec">&gt; APP_BINDINGS</span>
+          <span class="muted">4 slot</span>
+        </div>
+        <div class="bindings" id="bindings"></div>
+      </section>
+
+      <section class="panel panel-special">
+        <div class="panel-head">
+          <span class="sec">&gt; TASTI_SPECIALI</span>
+          <span class="muted">toggle · esc tap</span>
+        </div>
+        <div class="special-keys">
+          <button class="special-key" type="button" data-mod="ctrl" aria-pressed="false">Ctrl</button>
+          <button class="special-key" type="button" data-mod="alt" aria-pressed="false">Alt</button>
+          <button class="special-key" type="button" data-mod="meta" aria-pressed="false">Meta</button>
+          <button class="special-key" type="button" data-key="esc">Esc</button>
+        </div>
+      </section>
+
+      <section class="panel panel-actions">
+        <div class="panel-head">
+          <span class="sec">&gt; AZIONI</span>
+        </div>
+        <div class="actions">
+          <button class="action" type="button" data-key="volume_down">
+            <svg class="ic" aria-hidden="true"><use href="#i-volume-1"/></svg>
+            <span>VOL −</span>
+          </button>
+          <button class="action" type="button" data-key="volume_up">
+            <svg class="ic" aria-hidden="true"><use href="#i-volume-2"/></svg>
+            <span>VOL +</span>
+          </button>
+          <button class="action" type="button" data-key="mute">
+            <svg class="ic" aria-hidden="true"><use href="#i-volume-x"/></svg>
+            <span>MUTE</span>
+          </button>
+          <button class="action accent" type="button" data-key="play_pause">
+            <svg class="ic" aria-hidden="true"><use href="#i-play"/></svg>
+            <span>PAUSA</span>
+          </button>
+          <button class="action" type="button" data-key="previous">
+            <svg class="ic" aria-hidden="true"><use href="#i-skip-back"/></svg>
+            <span>PREC</span>
+          </button>
+          <button class="action" type="button" data-key="next">
+            <svg class="ic" aria-hidden="true"><use href="#i-skip-fwd"/></svg>
+            <span>NEXT</span>
+          </button>
+          <button class="action" type="button" data-key="home">
+            <svg class="ic" aria-hidden="true"><use href="#i-home"/></svg>
+            <span>HOME</span>
+          </button>
+          <button class="action" type="button" data-switcher>
+            <svg class="ic" aria-hidden="true"><use href="#i-switcher"/></svg>
+            <span>ALT+TAB</span>
+          </button>
+          <button class="action" type="button" data-system="screenshot">
+            <svg class="ic" aria-hidden="true"><use href="#i-camera"/></svg>
+            <span>SCREENSHOT</span>
+          </button>
+          <button class="action danger" type="button" data-system="close_app">
+            <svg class="ic" aria-hidden="true"><use href="#i-close"/></svg>
+            <span>CHIUDI APP</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="panel panel-commands">
+        <div class="panel-head">
+          <span class="sec">&gt; COMANDI_RAPIDI</span>
+          <button type="button" class="ghost" id="commandsToggle" aria-expanded="true" title="Riduci comandi">−</button>
+        </div>
+        <div class="commands-scroll" id="commandsScroll">
+          <div id="commands" class="commands"></div>
+          <form id="addCommand" class="add-command" autocomplete="off">
+            <input name="name" type="text" placeholder="Nome comando" maxlength="60" required>
+            <input name="command" type="text" placeholder="Comando shell" maxlength="500" required>
+            <button type="submit">+ Aggiungi</button>
+          </form>
+        </div>
+      </section>
+
+      <footer class="sidebar-foot">
+        <a class="foot-link" href="/?ui=phone">
+          <svg class="ic small" aria-hidden="true"><use href="#i-phone"/></svg>
+          Telefono
+        </a>
+        <button class="foot-link" type="button" id="releaseAll">
+          <svg class="ic small" aria-hidden="true"><use href="#i-unlock"/></svg>
+          Rilascia input
+        </button>
+      </footer>
+    </aside>
+
+    <main class="stage">
+      <section class="lend-zone" id="lendZone" tabindex="-1" aria-label="Area di controllo del PC remoto">
+        <div class="zone-grid" aria-hidden="true"></div>
+
+        <div class="zone-hud">
+          <span class="zone-badge" id="captureBadge">IN ATTESA</span>
+          <span class="zone-hud-text" id="zoneHud">mouse / scroll / click / tastiera</span>
+        </div>
+
+        <div class="zone-center">
+          <div class="zone-icon">
+            <svg aria-hidden="true"><use href="#i-monitor"/></svg>
+          </div>
+          <h2 id="zoneTitle">AREA INPUT REMOTO</h2>
+          <p id="zoneHint">Sposta il cursore qui dentro per controllare il PC remoto.</p>
+          <div class="zone-legend">
+            <span><b>MOUSE</b> movimento relativo</span>
+            <span><b>SCROLL</b> rotella / due dita</span>
+            <span><b>CLICK</b> sinistro · centrale · destro</span>
+            <span><b>TASTIERA</b> fisica + toggle</span>
+          </div>
+        </div>
+
+        <div class="zone-foot">
+          <span id="zoneFoot">F1–F12 restano al PC locale · Meta/Alt/Ctrl: usa i toggle</span>
+        </div>
+      </section>
+
+      <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    </main>
+  </div>
+
+  <script src="/static/connection.js"></script>
+  <script src="/static/pc.js"></script>
+</body>
+</html>
